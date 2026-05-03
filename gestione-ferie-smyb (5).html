@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestione Ferie SMYB</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans','Segoe UI',sans-serif;background:#0c0e14;color:#e2e4e9;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#111320}::-webkit-scrollbar-thumb{background:#333750;border-radius:3px}
+.btn{border:none;cursor:pointer;font-family:inherit;font-weight:600;border-radius:8px;transition:all .15s;display:inline-flex;align-items:center;gap:5px;font-size:13px}
+.btn:hover{filter:brightness(1.15)}.btn:active{transform:scale(.97)}
+.bp{background:#3b82f6;color:#fff;padding:8px 16px}
+.bs2{background:#059669;color:#fff;padding:8px 16px}
+.bg2{background:transparent;color:#9ca3af;padding:7px 12px;border:1px solid #232740}
+.bg2:hover{color:#e2e4e9;border-color:#3b4770}
+.bsm{padding:5px 10px;font-size:11px}
+.bd2{background:rgba(220,38,38,.1);color:#f87171;border:1px solid rgba(220,38,38,.2)}
+.card{background:#141722;border:1px solid #232740;border-radius:10px;padding:16px}
+.inp{background:#0c0e14;border:1px solid #232740;border-radius:6px;padding:7px 10px;color:#e2e4e9;font-family:inherit;font-size:13px;width:100%;outline:none}
+.inp:focus{border-color:#3b82f6}
+select.inp{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.toast{position:fixed;top:16px;right:16px;padding:12px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:1000;box-shadow:0 6px 20px rgba(0,0,0,.5);color:#fff;animation:si .25s}
+@keyframes si{from{transform:translateX(80px);opacity:0}}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100}
+.mod{background:#141722;border:1px solid #232740;border-radius:14px;padding:24px;width:95%;max-width:700px;max-height:90vh;overflow-y:auto}
+.nt{padding:9px 16px;font-size:13px;font-weight:600;border:none;background:transparent;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.nt:hover{color:#9ca3af}.nt.ac{color:#3b82f6;border-bottom-color:#3b82f6}
+.cb{width:32px;height:24px;border:1px solid #232740;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace}
+.cb:hover{transform:scale(1.1)}
+.wt{width:36px;height:28px;border-radius:6px;border:2px solid #232740;cursor:pointer;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;display:inline-flex;align-items:center;justify-content:center;background:transparent;color:#4b5563;transition:all .12s}
+.wt:hover{transform:scale(1.08)}.wt:disabled{opacity:.5;cursor:not-allowed}
+.w1{background:#1e3a5f;border-color:#3b82f6;color:#93c5fd}
+.w2{background:#1a2e05;border-color:#65a30d;color:#a3e635}
+.w3{background:#2e1065;border-color:#7c3aed;color:#c4b5fd}
+.sm{display:inline-block;width:10px;height:10px;border-radius:50%}
+.sv{background:#22c55e;box-shadow:0 0 6px #22c55e88}
+.sa{background:#f59e0b;box-shadow:0 0 6px #f59e0b88}
+.sr{background:#ef4444;box-shadow:0 0 6px #ef444488}
+.st{padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;display:inline-block}
+.cr{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #1a1d2a;cursor:pointer;transition:background .1s}
+.cr:hover{background:rgba(59,130,246,.04)}
+.fl{font-size:11px;font-weight:600;color:#6b7280;display:block;margin-bottom:3px}
+.hd{display:none}
+table{border-collapse:collapse;width:100%;font-size:11px}
+th{padding:8px 10px;text-align:left;background:#0f1119}
+td{padding:5px 10px}
+.lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.lb{padding:40px;width:100%;max-width:400px;text-align:center}
+.mono{font-family:'JetBrains Mono',monospace}
+</style>
+</head>
+<body>
+<div id="tc"></div>
+<div id="app"></div>
+<div id="mov" class="mo hd" onclick="closeM()"><div class="mod" onclick="event.stopPropagation()"><div id="mc"></div></div></div>
+
+<script>
+// ═══ CONFIG ═══
+const CATS=[{id:"Impiegato",l:"Impiegati",i:"🏢",c:"#2563eb",m:3},{id:"Autista",l:"Autisti",i:"🚛",c:"#059669",m:8},{id:"Magazziniere",l:"Magazzinieri",i:"📦",c:"#d97706",m:4},{id:"Guardiano",l:"Guardiani",i:"🛡️",c:"#7c3aed",m:1},{id:"Portiere",l:"Portieri",i:"🚪",c:"#be185d",m:1}];
+const COD={L:{l:"Lavorativo",c:"#22c55e",b:"#052e16"},F:{l:"Ferie",c:"#f59e0b",b:"#451a03"},R:{l:"Riposo",c:"#6366f1",b:"#1e1b4b"},M:{l:"Malattia",c:"#ef4444",b:"#450a0a"},X:{l:"Permesso",c:"#ec4899",b:"#4a0525"}};
+const CK=Object.keys(COD);
+const STA=["Da compilare","Richiesta","Approvata","Respinta"];
+const STC={"Da compilare":{b:"#1a1d2a",c:"#6b7280"},Richiesta:{b:"#451a03",c:"#fcd34d"},Approvata:{b:"#052e16",c:"#86efac"},Respinta:{b:"#450a0a",c:"#fca5a5"}};
+const LTY={login:{l:"LOGIN",b:"#1e3a5f",c:"#93c5fd"},logout:{l:"LOGOUT",b:"#1a1d2a",c:"#6b7280"},scelta:{l:"SCELTA",b:"#451a03",c:"#fcd34d"},stato:{l:"STATO",b:"#052e16",c:"#86efac"},piano:{l:"PIANO",b:"#1e1b4b",c:"#c4b5fd"},admin:{l:"ADMIN",b:"#4a0525",c:"#f9a8d4"},reset:{l:"RESET",b:"#450a0a",c:"#fca5a5"}};
+
+const DE=[
+{id:1,n:"BOUTALBI",fn:"Impiegato",cr:"Alta",po:"Si",so:"",no:"Director Operations"},
+{id:2,n:"DE MATTIA",fn:"Impiegato"},{id:3,n:"DE FEO",fn:"Impiegato"},{id:4,n:"ESPOSITO",fn:"Impiegato"},
+{id:5,n:"ETTORRE",fn:"Impiegato"},{id:6,n:"FRUNCILLO",fn:"Impiegato"},{id:7,n:"GALLO",fn:"Impiegato"},
+{id:8,n:"GIORDANO",fn:"Impiegato"},{id:9,n:"MARRA",fn:"Impiegato"},{id:10,n:"VIVONE",fn:"Impiegato"},
+{id:11,n:"MOGAVERO",fn:"Impiegato"},{id:12,n:"MUGAVERO",fn:"Impiegato"},{id:13,n:"VILLACARO",fn:"Impiegato"},
+{id:14,n:"GRECO",fn:"Impiegato"},{id:15,n:"ZARAMELLA",fn:"Impiegato"},
+{id:16,n:"DONNARUMMA",fn:"Autista"},{id:17,n:"ALFANO",fn:"Autista"},{id:18,n:"BOTTIGLIERI",fn:"Autista"},
+{id:19,n:"CALABRESE",fn:"Autista"},{id:20,n:"CARRINO",fn:"Autista"},{id:21,n:"D'APONTE",fn:"Autista"},
+{id:22,n:"DE LEO",fn:"Autista"},{id:23,n:"DE LUCA R.",fn:"Autista"},{id:24,n:"DE LUCA",fn:"Autista"},
+{id:25,n:"DE SANTIS",fn:"Autista"},{id:26,n:"DI DOMENICO",fn:"Autista"},{id:27,n:"FORTUNATO",fn:"Magazziniere"},
+{id:28,n:"GAROFALO",fn:"Autista"},{id:29,n:"GIORDANO M.",fn:"Magazziniere"},{id:30,n:"GISOLFI",fn:"Autista"},
+{id:31,n:"LEO",fn:"Autista"},{id:32,n:"LISTO",fn:"Autista"},{id:33,n:"MARTINO",fn:"Autista"},
+{id:34,n:"PAPALARDO",fn:"Autista"},{id:35,n:"PECORARO",fn:"Magazziniere"},{id:36,n:"PICCIRILLO",fn:"Autista"},
+{id:37,n:"RAGONE",fn:"Autista"},{id:38,n:"RONGA",fn:"Autista"},{id:39,n:"SABELLA",fn:"Autista"},
+{id:40,n:"SALMIERI",fn:"Magazziniere"},{id:41,n:"SARLUCA",fn:"Autista"},{id:42,n:"SICA",fn:"Autista"},
+{id:43,n:"SINISCALCO",fn:"Autista"},{id:44,n:"TRAPANESE",fn:"Autista"},{id:45,n:"VIGGIANO",fn:"Autista"},
+{id:46,n:"VITOLO",fn:"Autista"},{id:47,n:"GRECO G.",fn:"Impiegato"},{id:48,n:"VILLACARO A.",fn:"Impiegato"},
+{id:49,n:"CANTIERO",fn:"Impiegato"},{id:50,n:"BERRITO",fn:"Autista"},{id:51,n:"NOSCHESE",fn:"Guardiano"},
+{id:52,n:"CANTIERO P.",fn:"Impiegato"},{id:53,n:"D'AMATO",fn:"Portiere"},
+{id:54,n:"AMABILE",fn:"Magazziniere"},{id:55,n:"ARGENTO",fn:"Magazziniere"},{id:56,n:"SICA A.",fn:"Autista"},
+{id:57,n:"BARRA",fn:"Magazziniere"},{id:58,n:"BRACCIANTE",fn:"Magazziniere"},{id:59,n:"COSTANTINO",fn:"Magazziniere"},
+{id:60,n:"FALIVENE",fn:"Magazziniere"},{id:61,n:"GUARINO",fn:"Magazziniere"},{id:62,n:"LEONE",fn:"Magazziniere"},
+{id:63,n:"LOFFREDO",fn:"Magazziniere"},{id:64,n:"V. BRUNO",fn:"Autista"},{id:65,n:"NAPOLETANO",fn:"Magazziniere"},
+{id:66,n:"PASSARO",fn:"Magazziniere"},{id:67,n:"PECORARO G.",fn:"Magazziniere"},{id:68,n:"PIMENTEL J.",fn:"Magazziniere"},
+{id:69,n:"PROCIDA",fn:"Impiegato"},{id:70,n:"POLVERINO",fn:"Magazziniere"},{id:71,n:"PORCARO",fn:"Magazziniere"},
+{id:72,n:"RESCIGNO",fn:"Autista"},{id:73,n:"RUSSO",fn:"Magazziniere"},{id:74,n:"ALFIERI",fn:"Autista"},
+{id:75,n:"BARBATO",fn:"Autista"},{id:76,n:"BELLO",fn:"Autista"},{id:77,n:"CRISCUOLO",fn:"Autista"},
+{id:78,n:"FABIO",fn:"Autista"},{id:79,n:"MAINOLFI",fn:"Autista"},{id:80,n:"PETROS",fn:"Autista"},
+{id:81,n:"COPPOLA",fn:"Autista"},{id:82,n:"COSATRA",fn:"Autista"},{id:83,n:"COSATRA G.",fn:"Autista"}
+].map(e=>({cr:"",po:"",so:"",no:"",...e}));
+
+// ═══ STATE ═══
+let E=JSON.parse(JSON.stringify(DE)),P={anno:2026,ini:"2026-06-01",nw:18,cI:"2026-07-20",cF:"2026-09-13",mx:10};
+let pi={},cov=Object.fromEntries(CATS.map(c=>[c.id,c.m])),ri={},logs=[],creds={};
+let user=null,cv="compilazione",filt="all",lf="all";
+
+// ═══ HELPERS ═══
+const mu=n=>n.toLowerCase().replace(/[\s.']/g,"");
+const gM=d=>{const t=new Date(d),y=t.getDay();t.setDate(t.getDate()-y+(y===0?-6:1));t.setHours(0,0,0,0);return t};
+const aW=(d,n)=>{const t=new Date(d);t.setDate(t.getDate()+n*7);return t};
+const fD=d=>`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+const fDF=d=>`${fD(d)}/${d.getFullYear()}`;
+const fTS=d=>`${fD(d)}/${d.getFullYear()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}:${String(d.getSeconds()).padStart(2,"0")}`;
+const gc=fn=>CATS.find(c=>c.id===fn)||CATS[0];
+
+function gW(){const s=gM(new Date(P.ini)),cs=new Date(P.cI),ce=new Date(P.cF);return Array.from({length:P.nw},(_,i)=>{const st=aW(s,i),en=new Date(st);en.setDate(en.getDate()+4);return{num:i+1,s:st,e:en,fase:st>=cs&&st<=ce?"Calo":"Norm"}})}
+function initP(){const w=gW();E.forEach(e=>{w.forEach(wk=>{const k=`${e.id}-W${wk.num}`;if(!pi[k])pi[k]="L"})})}
+function initR(){E.forEach(e=>{if(!ri[e.id])ri[e.id]={s1:[],s2:[],s3:[],stato:"Da compilare",wA:[],note:""}})}
+function initC(){if(!creds.admin)creds.admin={pw:"admin2026",eid:null,role:"admin"};E.forEach(e=>{const u=mu(e.n);if(!creds[u])creds[u]={pw:"smyb2026",eid:e.id,role:"emp"};else creds[u].eid=e.id})}
+function aL(type,action,detail){logs.unshift({ts:new Date().toISOString(),u:user?.un||"sys",un:user?.nm||"Sistema",type,action,detail:detail||""});if(logs.length>500)logs.length=500}
+function cap(){const w=gW();return w.map(wk=>{const r={wk,al:[]};CATS.forEach(cat=>{const ce=E.filter(e=>e.fn===cat.id),tot=ce.length,abs=ce.filter(e=>"FRMX".includes(pi[`${e.id}-W${wk.num}`]||"L")).length,pr=tot-abs,mn=cov[cat.id]||0;r[cat.id]={tot,abs,pr,mn};if(pr<mn)r.al.push(`${cat.l}: ${pr}/${mn}`)});r.cr=E.filter(e=>e.cr==="Alta"&&pi[`${e.id}-W${wk.num}`]==="F").length;r.es=r.al.length>1?"ROSSO":r.al.length?"ARANCIONE":"VERDE";return r})}
+function viol(){const mx=Math.floor(P.mx/5),v=[];E.forEach(e=>{let s=0,m=0;gW().forEach(w=>{if(pi[`${e.id}-W${w.num}`]==="F"){s++;m=Math.max(m,s)}else s=0});if(m>mx)v.push({e,ms:m,lim:mx})});return v}
+function toast(m,t){const c=document.getElementById("tc");c.innerHTML=`<div class="toast" style="background:${t==="success"?"#065f46":t==="error"?"#7f1d1d":"#1e3a5f"}">${m}</div>`;setTimeout(()=>c.innerHTML="",3e3)}
+function save(){try{localStorage.setItem("smyb-v5",JSON.stringify({E,P,pi,cov,ri,logs,creds}))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem("smyb-v5"));if(d){if(d.E)E=d.E;if(d.P)P=d.P;if(d.pi)pi=d.pi;if(d.cov)cov=d.cov;if(d.ri)ri=d.ri;if(d.logs)logs=d.logs;if(d.creds)creds=d.creds}}catch(e){}}
+function closeM(){document.getElementById("mov").classList.add("hd")}
+function openM(h){document.getElementById("mc").innerHTML=h;document.getElementById("mov").classList.remove("hd")}
+const isA=()=>user&&user.role==="admin";
+
+// ═══ WEEK GRID HTML ═══
+function wkGrid(eid,dis){
+  const w=gW(),r=ri[eid]||{s1:[],s2:[],s3:[]};
+  let h=`<div style="overflow-x:auto"><table style="min-width:600px"><thead><tr><th style="min-width:80px;padding:6px 8px"></th>`;
+  w.forEach(wk=>{h+=`<th style="text-align:center;padding:4px 2px;font-size:9px;min-width:38px;color:${wk.fase==="Calo"?"#f59e0b":"#6b7280"}">W${wk.num}<br>${fD(wk.s)}</th>`});
+  h+=`</tr></thead><tbody>`;
+  [{k:"s1",l:"1ª scelta",cls:"w1",c:"#3b82f6"},{k:"s2",l:"2ª scelta",cls:"w2",c:"#65a30d"},{k:"s3",l:"3ª scelta",cls:"w3",c:"#7c3aed"}].forEach(sc=>{
+    h+=`<tr><td style="padding:6px 8px;font-size:12px;font-weight:600;color:${sc.c}">${sc.l}</td>`;
+    w.forEach(wk=>{const a=r[sc.k]&&r[sc.k].includes(wk.num);
+      h+=`<td style="text-align:center;padding:2px"><button class="wt ${a?sc.cls:""}" ${dis?"disabled":""} onclick="togSc(${eid},'${sc.k}',${wk.num})">${a?"F":""}</button></td>`});
+    h+=`</tr>`});
+  h+=`</tbody></table></div>`;return h;
+}
+
+// ═══ LOGIN ═══
+function showLogin(){
+  document.getElementById("app").innerHTML=`<div class="lw"><div class="card lb">
+    <div style="font-size:40px;margin-bottom:12px">📅</div>
+    <h1 style="font-size:24px;font-weight:700;margin-bottom:6px">Gestione Ferie SMYB</h1>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:28px">Piano Ferie Estive ${P.anno}</p>
+    <div style="text-align:left;margin-bottom:10px"><label class="fl">Nome utente</label><input class="inp" id="lu" style="padding:12px 14px;font-size:14px" placeholder="es. boutalbi oppure admin" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div style="text-align:left;margin-bottom:10px"><label class="fl">Password</label><input class="inp" id="lp" type="password" style="padding:12px 14px;font-size:14px" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div id="lerr" style="color:#fca5a5;font-size:12px;margin-top:4px;min-height:18px"></div>
+    <button class="btn bp" style="width:100%;justify-content:center;padding:12px;margin-top:8px;font-size:15px" onclick="doLogin()">Accedi</button>
+    <p style="margin-top:20px;font-size:11px;color:#4b5563">Dipendente: cognome minuscolo / smyb2026<br>Admin: admin / admin2026</p>
+  </div></div>`;
+  setTimeout(()=>{const el=document.getElementById("lu");if(el)el.focus()},100);
+}
+function doLogin(){
+  const u=(document.getElementById("lu").value||"").trim().toLowerCase(),p=document.getElementById("lp").value||"";
+  if(!u||!p){document.getElementById("lerr").textContent="Inserire utente e password";return}
+  const cr=creds[u];if(!cr||cr.pw!==p){document.getElementById("lerr").textContent="Credenziali non valide";aL("login","Tentativo fallito: "+u);save();return}
+  const emp=cr.eid?E.find(e=>e.id===cr.eid):null;
+  user={un:u,eid:cr.eid,role:cr.role,nm:cr.role==="admin"?"ADMIN (COO)":emp?emp.n:u};
+  cv=cr.role==="admin"?"compilazione":"miascheda";
+  aL("login","Accesso: "+user.nm);save();sessionStorage.setItem("ss",JSON.stringify(user));render();
+}
+function doLogout(){aL("logout","Disconnesso: "+user.nm);user=null;save();sessionStorage.removeItem("ss");showLogin()}
+
+// ═══ SWITCH VIEW ═══
+function sw(v,btn){cv=v;document.querySelectorAll(".nt").forEach(t=>t.classList.remove("ac"));if(btn)btn.classList.add("ac");render()}
+
+// ═══ RENDER ═══
+function render(){
+  initP();initR();
+  const w=gW(),cd=cap(),vi=viol();
+  const comp=E.filter(e=>ri[e.id]&&ri[e.id].stato!=="Da compilare").length;
+  const pct=E.length?Math.round(comp/E.length*100):0;
+  const kp={r:cd.filter(c=>c.es==="ROSSO").length,a:cd.filter(c=>c.es==="ARANCIONE").length,v:cd.filter(c=>c.es==="VERDE").length,vi:vi.length};
+
+  let h=`<div style="background:linear-gradient(135deg,#0f1119,#161a28);border-bottom:1px solid #232740;padding:20px 24px">`;
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div>`;
+  h+=`<h1 style="font-size:20px;font-weight:700;color:#f0f1f3">📅 Gestione Ferie SMYB</h1>`;
+  h+=`<p style="font-size:12px;color:#6b7280;margin-top:2px">Utente: <strong style="color:#3b82f6">${user.nm}</strong> (${isA()?"Amministratore":"Dipendente"})</p>`;
+  h+=`</div><button class="btn bsm bd2" onclick="doLogout()">🚪 Esci</button></div>`;
+
+  if(isA()){
+    h+=`<div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">`;
+    h+=`<div style="background:#0c0e14;border:1px solid #232740;border-radius:8px;padding:8px 14px;font-size:12px;border-left:3px solid #3b82f6">📝 <strong>${comp}</strong>/${E.length} (${pct}%)</div>`;
+    CATS.forEach(cat=>{const n=E.filter(e=>e.fn===cat.id).length;if(n)h+=`<div style="background:#0c0e14;border:1px solid #232740;border-radius:8px;padding:8px 14px;font-size:12px;border-left:3px solid ${cat.c}">${cat.i} <strong>${n}</strong></div>`});
+    if(kp.r)h+=`<div style="background:#450a0a;border:1px solid #7f1d1d;border-radius:8px;padding:8px 14px;font-size:12px;color:#fca5a5"><span class="sm sr"></span> ${kp.r} WK rosse</div>`;
+    h+=`</div>`;
+  }
+
+  h+=`<div style="display:flex;gap:0;margin-top:12px;border-bottom:1px solid #232740;overflow:auto">`;
+  if(isA()){
+    [{id:"compilazione",l:"📝 Compilazione"},{id:"dashboard",l:"📊 Dashboard"},{id:"piano",l:"📋 Piano"},{id:"capacita",l:"🔍 Controlli"},{id:"anagrafica",l:"👥 Anagrafica"},{id:"logbook",l:"📜 Logbook"},{id:"credenziali",l:"🔑 Credenziali"},{id:"parametri",l:"⚙️ Parametri"}].forEach(t=>{
+      h+=`<button class="nt ${cv===t.id?"ac":""}" onclick="sw('${t.id}',this)">${t.l}</button>`});
+  }else h+=`<button class="nt ac">📝 La Mia Scheda</button>`;
+  h+=`</div></div><div style="padding:20px 24px">`;
+
+  // ═══ EMPLOYEE VIEW ═══
+  if(!isA()){
+    const emp=E.find(e=>e.id===user.eid);
+    if(!emp){h+=`<div class="card">Utente non trovato</div>`}
+    else{
+      const r=ri[emp.id]||{s1:[],s2:[],s3:[],stato:"Da compilare",note:""};
+      const lk=r.stato==="Approvata"||r.stato==="Respinta";
+      const cc=gc(emp.fn),sc=STC[r.stato];
+      h+=`<div class="card" style="margin-bottom:16px;border-left:3px solid ${cc.c}"><h2 style="font-size:18px;font-weight:700">👤 ${emp.n}</h2><p style="font-size:13px;color:${cc.c}">${cc.i} ${emp.fn}</p>`;
+      h+=`<div style="margin-top:10px;display:flex;gap:12px;align-items:center"><span>Stato:</span><span class="st" style="background:${sc.b};color:${sc.c}">${r.stato}</span></div>`;
+      if(lk)h+=`<p style="font-size:12px;color:#6b7280;margin-top:8px">ℹ️ Richiesta ${r.stato.toLowerCase()}. Contatta l'amministrazione per variazioni.</p>`;
+      h+=`</div>`;
+
+      h+=`<div class="card" style="margin-bottom:16px"><h3 style="font-size:14px;font-weight:600;margin-bottom:4px">Seleziona le tue settimane</h3>`;
+      h+=`<p style="font-size:11px;color:#6b7280;margin-bottom:12px">Clicca per selezionare/deselezionare. 3 ordini di preferenza.</p>`;
+      h+=`<div style="display:flex;gap:12px;margin-bottom:12px;font-size:11px;flex-wrap:wrap">`;
+      [{c:"#3b82f6",l:"1ª scelta"},{c:"#65a30d",l:"2ª scelta"},{c:"#7c3aed",l:"3ª scelta"}].forEach(x=>{h+=`<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:3px;border:1px solid ${x.c};background:${x.c}22"></span>${x.l}</span>`});
+      h+=`</div>`;
+      h+=wkGrid(emp.id,lk);
+      h+=`</div>`;
+
+      h+=`<div class="card" style="margin-bottom:16px"><div style="margin-bottom:10px"><label class="fl">Note (facoltativo)</label><input class="inp" id="enote" value="${r.note||""}" ${lk?"disabled":""} onchange="ri[${emp.id}].note=this.value;save()" placeholder="Preferenze, vincoli..."></div></div>`;
+
+      h+=`<div class="card" style="margin-bottom:16px"><h3 style="font-size:14px;font-weight:600;margin-bottom:8px">Riepilogo</h3>`;
+      h+=`<p style="font-size:12px;color:#9ca3af">1ª scelta: <strong style="color:#93c5fd">${r.s1.length} WK</strong>${r.s1.length?" (W"+r.s1.join(",W")+")":""}</p>`;
+      h+=`<p style="font-size:12px;color:#9ca3af">2ª scelta: <strong style="color:#a3e635">${r.s2.length} WK</strong>${r.s2.length?" (W"+r.s2.join(",W")+")":""}</p>`;
+      h+=`<p style="font-size:12px;color:#9ca3af">3ª scelta: <strong style="color:#c4b5fd">${r.s3.length} WK</strong>${r.s3.length?" (W"+r.s3.join(",W")+")":""}</p>`;
+      h+=`</div>`;
+      if(!lk)h+=`<div style="display:flex;justify-content:flex-end"><button class="btn bp" style="font-size:14px;padding:10px 24px" onclick="empSubmit()">📨 Invia richiesta</button></div>`;
+    }
+  }
+
+  // ═══ ADMIN: COMPILAZIONE ═══
+  if(isA()&&cv==="compilazione"){
+    const fe=filt==="all"?E:E.filter(e=>e.fn===filt);
+    h+=`<div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap">`;
+    h+=`<select class="inp" style="width:auto" onchange="filt=this.value;render()"><option value="all">Tutte le funzioni</option>`;
+    CATS.forEach(c=>{h+=`<option value="${c.id}" ${filt===c.id?"selected":""}>${c.l}</option>`});
+    h+=`</select><div style="flex:1;min-width:200px;display:flex;align-items:center;gap:10px"><div style="height:4px;border-radius:2px;background:#232740;overflow:hidden;flex:1"><div style="height:100%;border-radius:2px;width:${pct}%;background:${pct===100?"#22c55e":"#3b82f6"};transition:width .3s"></div></div><span style="font-size:12px;font-weight:600;color:#9ca3af">${pct}%</span></div>`;
+    h+=`<button class="btn bs2 bsm" onclick="appTutte()">🔄 Applica approvate</button></div>`;
+    h+=`<div style="border-radius:10px;border:1px solid #232740;overflow:hidden">`;
+    fe.forEach(emp=>{const r=ri[emp.id]||{s1:[],s2:[],s3:[],stato:"Da compilare"};const cc=gc(emp.fn),sc=STC[r.stato];const all=[...r.s1,...r.s2,...r.s3];
+      h+=`<div class="cr" onclick="openComp(${emp.id})"><div style="width:30px;text-align:center;color:#4b5563;font-size:10px">${emp.id}</div>`;
+      h+=`<div style="width:130px;font-weight:500;font-size:13px">${emp.cr==="Alta"?'<span style="color:#ef4444;margin-right:3px">●</span>':""}${emp.n}</div>`;
+      h+=`<div style="width:70px;color:${cc.c};font-size:10px;font-weight:600">${emp.fn}</div>`;
+      h+=`<div style="display:flex;gap:2px;flex:1;min-width:180px">`;
+      w.forEach(wk=>{let bg="#1a1d2a",bd="#232740";if(r.s1.includes(wk.num)){bg="#1e3a5f";bd="#3b82f6"}else if(r.s2.includes(wk.num)){bg="#1a2e05";bd="#65a30d"}else if(r.s3.includes(wk.num)){bg="#2e1065";bd="#7c3aed"}h+=`<div style="width:14px;height:14px;border-radius:3px;background:${bg};border:1px solid ${bd};flex-shrink:0"></div>`});
+      h+=`</div><div style="width:40px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:${all.length?"#f59e0b":"#4b5563"}">${all.length}</div>`;
+      h+=`<span class="st" style="background:${sc.b};color:${sc.c};min-width:80px;text-align:center">${r.stato}</span>`;
+      h+=`<div style="width:20px;color:#4b5563;text-align:center">→</div></div>`});
+    h+=`</div>`;
+  }
+
+  // ═══ ADMIN: DASHBOARD ═══
+  if(isA()&&cv==="dashboard"){
+    [{l:"WK verdi",v:kp.v,c:"#22c55e"},{l:"WK arancioni",v:kp.a,c:"#f59e0b"},{l:"WK rosse",v:kp.r,c:"#ef4444"},{l:"Violazioni",v:kp.vi,c:"#7c3aed"}].forEach(k=>{h+=`<div class="card" style="display:inline-block;text-align:center;min-width:120px;margin:0 8px 10px 0"><div style="font-size:26px;font-weight:700;color:${k.c}" class="mono">${k.v}</div><div style="font-size:10px;color:#6b7280;margin-top:4px">${k.l}</div></div>`});
+    h+=`<div class="card" style="margin:10px 0 16px"><h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Semaforo</h3><div style="display:flex;gap:4px;flex-wrap:wrap">`;
+    cd.forEach(c=>{h+=`<div style="display:flex;flex-direction:column;align-items:center;gap:3px" title="W${c.wk.num} — ${c.es}"><span class="sm s${c.es[0].toLowerCase()}" style="width:14px;height:14px"></span><span style="font-size:9px;color:#6b7280">W${c.wk.num}</span></div>`});
+    h+=`</div></div>`;
+    if(vi.length){h+=`<div class="card" style="border-color:#7f1d1d"><h3 style="font-size:14px;font-weight:600;color:#fca5a5;margin-bottom:10px">⚠️ Violazioni</h3>`;vi.forEach(v=>{h+=`<div style="font-size:12px;padding:6px 0;border-bottom:1px solid #1e1e2e"><strong>${v.e.n}</strong> — ${v.ms} WK (max ${v.lim})</div>`});h+=`</div>`}
+  }
+
+  // ═══ ADMIN: PIANO ═══
+  if(isA()&&cv==="piano"){
+    const fe=filt==="all"?E:E.filter(e=>e.fn===filt);
+    h+=`<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><select class="inp" style="width:auto" onchange="filt=this.value;render()"><option value="all">Tutte</option>`;
+    CATS.forEach(c=>{h+=`<option value="${c.id}" ${filt===c.id?"selected":""}>${c.l}</option>`});
+    h+=`</select><div style="display:flex;gap:6px;margin-left:auto;flex-wrap:wrap">`;
+    CK.forEach(code=>{h+=`<span style="font-size:10px;display:flex;align-items:center;gap:3px"><span style="width:18px;height:16px;border-radius:3px;background:${COD[code].b};color:${COD[code].c};display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-family:'JetBrains Mono',monospace;font-size:10px">${code}</span><span style="color:#6b7280">${COD[code].l}</span></span>`});
+    h+=`</div></div><div style="overflow-x:auto;border-radius:10px;border:1px solid #232740"><table style="min-width:900px"><thead><tr><th style="min-width:120px;position:sticky;left:0;z-index:2;background:#0f1119;border-right:1px solid #232740">Risorsa</th><th style="min-width:50px">Fn</th>`;
+    w.forEach(wk=>{h+=`<th style="text-align:center;min-width:38px;font-size:9px;color:${wk.fase==="Calo"?"#f59e0b":"#6b7280"}">W${wk.num}<br>${fD(wk.s)}</th>`});
+    h+=`<th style="text-align:center;font-size:9px">F</th></tr></thead><tbody>`;
+    fe.forEach(emp=>{const cc=gc(emp.fn),wF=w.filter(wk=>pi[`${emp.id}-W${wk.num}`]==="F").length;
+      h+=`<tr style="border-bottom:1px solid #1a1d2a"><td style="padding:5px 10px;font-weight:500;position:sticky;left:0;z-index:1;background:#141722;border-right:1px solid #232740;white-space:nowrap">${emp.n}</td><td style="color:${cc.c};font-size:10px;font-weight:600">${emp.fn.slice(0,3).toUpperCase()}</td>`;
+      w.forEach(wk=>{const code=pi[`${emp.id}-W${wk.num}`]||"L";h+=`<td style="padding:2px;text-align:center"><button class="cb" style="background:${COD[code].b};color:${COD[code].c};border-color:${COD[code].c}33" onclick="cyc(${emp.id},${wk.num})">${code}</button></td>`});
+      h+=`<td style="text-align:center;font-weight:600;color:${wF?"#f59e0b":"#4b5563"};font-size:12px" class="mono">${wF}</td></tr>`});
+    h+=`</tbody></table></div>`;
+    // Coverage
+    h+=`<div class="card" style="margin-top:12px"><h4 style="font-size:12px;font-weight:600;margin-bottom:8px">Copertura</h4><div style="overflow-x:auto"><table style="min-width:900px;font-size:10px"><tbody>`;
+    CATS.filter(c=>E.some(e=>e.fn===c.id)).forEach(cat=>{h+=`<tr style="border-bottom:1px solid #1a1d2a"><td style="padding:4px 8px;color:${cat.c};font-weight:600;min-width:100px">${cat.i} ${cat.l}</td><td style="min-width:50px"></td>`;cd.forEach(c=>{const d=c[cat.id];if(!d){h+=`<td></td>`;return}h+=`<td style="text-align:center;color:${d.pr>=d.mn?"#22c55e":"#ef4444"};font-weight:600" class="mono">${d.pr}/${d.mn}</td>`});h+=`<td></td></tr>`});
+    h+=`<tr><td style="padding:4px 8px;font-weight:600">Esito</td><td></td>`;cd.forEach(c=>{h+=`<td style="text-align:center"><span class="sm s${c.es[0].toLowerCase()}"></span></td>`});h+=`<td></td></tr></tbody></table></div></div>`;
+  }
+
+  // ═══ ADMIN: CONTROLLI ═══
+  if(isA()&&cv==="capacita"){
+    cd.forEach(c=>{const bc=c.es==="VERDE"?"#22c55e":c.es==="ARANCIONE"?"#f59e0b":"#ef4444";
+      h+=`<div class="card" style="border-left:3px solid ${bc};margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><div><div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px"><span class="sm s${c.es[0].toLowerCase()}"></span> W${c.wk.num} — ${fD(c.wk.s)} → ${fD(c.wk.e)}${c.wk.fase==="Calo"?' <span style="font-size:10px;color:#f59e0b;background:#451a03;padding:2px 8px;border-radius:10px">↓ Calo</span>':""}</div>`;
+      h+=`<div style="display:flex;gap:14px;margin-top:6px;font-size:12px">`;CATS.filter(ct=>E.some(e=>e.fn===ct.id)).forEach(ct=>{const d=c[ct.id];if(!d)return;h+=`<span style="color:${d.pr>=d.mn?"#9ca3af":"#ef4444"}">${ct.i} ${d.pr}/${d.mn}${d.pr<d.mn?" ⚠️":""}</span>`});
+      h+=`</div></div><span style="font-weight:700;color:${bc}">${c.es}</span></div>`;
+      if(c.al.length)h+=`<div style="margin-top:8px;padding:8px 10px;background:#1a0a0a;border-radius:6px;font-size:11px;color:#fca5a5">${c.al.map(a=>"⚠️ "+a).join("<br>")}</div>`;
+      h+=`</div>`})}
+
+  // ═══ ADMIN: ANAGRAFICA ═══
+  if(isA()&&cv==="anagrafica"){
+    const fe=filt==="all"?E:E.filter(e=>e.fn===filt);
+    h+=`<div style="display:flex;gap:8px;margin-bottom:12px"><select class="inp" style="width:auto" onchange="filt=this.value;render()"><option value="all">Tutte</option>`;CATS.forEach(c=>{h+=`<option value="${c.id}" ${filt===c.id?"selected":""}>${c.l}</option>`});h+=`</select></div>`;
+    h+=`<div style="overflow-x:auto;border-radius:10px;border:1px solid #232740"><table style="font-size:12px"><thead><tr><th>ID</th><th>Nome</th><th>Username</th><th>Funzione</th><th>Criticità</th><th>WK F</th></tr></thead><tbody>`;
+    fe.forEach(emp=>{const cc=gc(emp.fn),u2=mu(emp.n),wF=w.filter(wk=>pi[`${emp.id}-W${wk.num}`]==="F").length;
+      h+=`<tr style="border-bottom:1px solid #1a1d2a"><td style="color:#6b7280">${emp.id}</td><td style="font-weight:500">${emp.n}</td><td class="mono" style="font-size:10px;color:#6b7280">${u2}</td><td style="color:${cc.c};font-weight:600;font-size:11px">${emp.fn}</td>`;
+      if(emp.cr){const bg=emp.cr==="Alta"?"#450a0a":emp.cr==="Media"?"#451a03":"#0c1a0a",cl=emp.cr==="Alta"?"#fca5a5":emp.cr==="Media"?"#fcd34d":"#86efac";h+=`<td><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:${bg};color:${cl}">${emp.cr}</span></td>`}else h+=`<td></td>`;
+      h+=`<td class="mono" style="font-weight:600">${wF}</td></tr>`});
+    h+=`</tbody></table></div>`}
+
+  // ═══ ADMIN: LOGBOOK ═══
+  if(isA()&&cv==="logbook"){
+    h+=`<div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap"><h3 style="font-size:16px;font-weight:600">📜 Logbook</h3>`;
+    h+=`<select class="inp" style="width:auto;margin-left:auto" onchange="lf=this.value;render()"><option value="all" ${lf==="all"?"selected":""}>Tutti</option>`;Object.entries(LTY).forEach(([k,v])=>{h+=`<option value="${k}" ${lf===k?"selected":""}>${v.l}</option>`});
+    h+=`</select><span style="font-size:12px;color:#6b7280">${logs.length} voci</span></div>`;
+    const fl=lf==="all"?logs:logs.filter(l=>l.type===lf);
+    if(!fl.length)h+=`<div class="card" style="text-align:center;padding:40px;color:#6b7280">📭 Nessuna voce</div>`;
+    else{h+=`<div style="border-radius:10px;border:1px solid #232740;overflow:hidden;max-height:500px;overflow-y:auto">`;
+      fl.forEach(l=>{const lt=LTY[l.type]||{l:l.type,b:"#1a1d2a",c:"#6b7280"};
+        h+=`<div style="padding:10px 14px;border-bottom:1px solid #1a1d2a;font-size:12px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">`;
+        h+=`<span class="mono" style="color:#4b5563;font-size:10px;min-width:130px">${fTS(new Date(l.ts))}</span>`;
+        h+=`<span style="padding:2px 8px;border-radius:8px;font-size:9px;font-weight:600;background:${lt.b};color:${lt.c};min-width:60px;text-align:center">${lt.l}</span>`;
+        h+=`<span style="color:#3b82f6;font-weight:600;min-width:90px">${l.un}</span>`;
+        h+=`<span style="flex:1">${l.action}${l.detail?` <span style="color:#4b5563;font-size:10px">${l.detail}</span>`:""}</span></div>`});
+      h+=`</div>`}}
+
+  // ═══ ADMIN: CREDENZIALI ═══
+  if(isA()&&cv==="credenziali"){
+    h+=`<h3 style="font-size:16px;font-weight:600;margin-bottom:16px">🔑 Credenziali</h3>`;
+    h+=`<p style="font-size:12px;color:#6b7280;margin-bottom:16px">Password default: <code class="mono" style="background:#232740;padding:2px 8px;border-radius:4px">smyb2026</code></p>`;
+    h+=`<div style="overflow-x:auto;border-radius:10px;border:1px solid #232740"><table style="font-size:12px"><thead><tr><th>Utente</th><th>Password</th><th>Dipendente</th><th>Ruolo</th><th></th></tr></thead><tbody>`;
+    h+=`<tr style="border-bottom:1px solid #1a1d2a;background:rgba(59,130,246,.04)"><td class="mono" style="font-weight:600;color:#3b82f6">admin</td><td><input class="inp" style="width:120px;font-size:11px" value="${creds.admin?.pw||""}" onchange="creds.admin.pw=this.value;aL('admin','Password admin modificata');save()"></td><td style="color:#6b7280">—</td><td><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:#1e3a5f;color:#93c5fd">Admin</span></td><td></td></tr>`;
+    E.forEach(emp=>{const u2=mu(emp.n),cr=creds[u2];if(!cr)return;
+      h+=`<tr style="border-bottom:1px solid #1a1d2a"><td class="mono" style="font-size:10px">${u2}</td><td><input class="inp" style="width:120px;font-size:11px" value="${cr.pw}" onchange="creds['${u2}'].pw=this.value;save()"></td><td>${emp.n}</td><td style="font-size:10px;color:#6b7280">Dipendente</td>`;
+      h+=`<td><button class="btn bg2 bsm" onclick="creds['${u2}'].pw='smyb2026';save();render();toast('Reset OK','success')">🔄</button></td></tr>`});
+    h+=`</tbody></table></div>`}
+
+  // ═══ ADMIN: PARAMETRI ═══
+  if(isA()&&cv==="parametri"){
+    h+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px"><div class="card"><h3 style="font-size:14px;font-weight:600;margin-bottom:14px">⚙️ Parametri</h3>`;
+    [{k:"anno",l:"Anno",t:"number"},{k:"ini",l:"Data inizio",t:"date"},{k:"nw",l:"Settimane",t:"number"},{k:"cI",l:"Inizio calo",t:"date"},{k:"cF",l:"Fine calo",t:"date"},{k:"mx",l:"Max GG consecutivi",t:"number"}].forEach(p=>{
+      h+=`<div style="margin-bottom:10px"><label class="fl">${p.l}</label><input class="inp" type="${p.t}" value="${P[p.k]}" onchange="P['${p.k}']=${p.t==="number"?"parseInt(this.value)||0":"this.value"};render()"></div>`});
+    h+=`</div><div class="card"><h3 style="font-size:14px;font-weight:600;margin-bottom:14px">🎯 Copertura Minima</h3>`;
+    CATS.forEach(cat=>{h+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><label style="flex:1;font-size:13px">${cat.i} ${cat.l}</label><input type="number" class="inp" style="width:70px;text-align:center" value="${cov[cat.id]}" onchange="cov['${cat.id}']=parseInt(this.value)||0;render()"></div>`});
+    h+=`<button class="btn bsm bd2" style="margin-top:12px" onclick="resetAll()">Ripristina tutto</button></div></div>`}
+
+  h+=`</div>`;
+  document.getElementById("app").innerHTML=h;
+  save();
+}
+
+// ═══ ACTIONS ═══
+function togSc(eid,key,wn){
+  const r=ri[eid];if(!r)return;if(r.stato==="Approvata"||r.stato==="Respinta")return;
+  const was=r[key].includes(wn);
+  ["s1","s2","s3"].forEach(k=>{r[k]=r[k].filter(x=>x!==wn)});
+  if(!was){r[key].push(wn);r[key].sort((a,b)=>a-b)}
+  if(r.stato==="Da compilare")r.stato="Richiesta";
+  const emp=E.find(e=>e.id===eid);aL("scelta",`${user.nm} → ${emp?emp.n:eid}: W${wn} ${key}`);
+  save();
+  if(isA()&&document.getElementById("mov")&&!document.getElementById("mov").classList.contains("hd")){openComp(eid)}
+  else render();
+}
+function empSubmit(){
+  const r=ri[user.eid];if(!r)return;
+  if(!r.s1.length&&!r.s2.length&&!r.s3.length){toast("Seleziona almeno una settimana","error");return}
+  r.stato="Richiesta";aL("stato",user.nm+": richiesta inviata");save();render();toast("📨 Richiesta inviata!","success");
+}
+function cyc(eid,wn){const k=`${eid}-W${wn}`,cur=pi[k]||"L";pi[k]=CK[(CK.indexOf(cur)+1)%CK.length];save();render()}
+function appTutte(){let c=0;E.forEach(emp=>{const r=ri[emp.id];if(!r||r.stato!=="Approvata")return;const wk=r.wA&&r.wA.length?r.wA:r.s1;wk.forEach(w=>{pi[`${emp.id}-W${w}`]="F"});if(!r.wA||!r.wA.length)r.wA=[...r.s1];c++});aL("piano",`Applicate ${c} al piano`);save();render();toast(`🔄 ${c} applicate`,"success")}
+function resetAll(){E=JSON.parse(JSON.stringify(DE));pi={};ri={};creds={};P={anno:2026,ini:"2026-06-01",nw:18,cI:"2026-07-20",cF:"2026-09-13",mx:10};cov=Object.fromEntries(CATS.map(c=>[c.id,c.m]));initC();aL("reset","Reset completo");save();render();toast("🔄 Ripristinato")}
+
+// ═══ COMP MODAL ═══
+function openComp(eid){
+  const emp=E.find(e=>e.id===eid);if(!emp)return;
+  const r=ri[eid]||{s1:[],s2:[],s3:[],stato:"Da compilare",note:""};const cc=gc(emp.fn);
+  let h=`<h3 style="font-size:18px;font-weight:700;margin-bottom:6px">📝 ${emp.n}</h3><p style="font-size:12px;color:${cc.c};margin-bottom:16px">${cc.i} ${emp.fn}</p>`;
+  h+=wkGrid(eid,false);
+  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0"><div><label class="fl">Stato</label><select class="inp" onchange="ri[${eid}].stato=this.value;aL('stato','${emp.n}: → '+this.value);save()">`;
+  STA.forEach(s=>{h+=`<option value="${s}" ${r.stato===s?"selected":""}>${s}</option>`});
+  h+=`</select></div><div><label class="fl">Note</label><input class="inp" value="${r.note||""}" onchange="ri[${eid}].note=this.value;save()"></div></div>`;
+  h+=`<div style="padding:12px;background:#0c0e14;border-radius:8px;border:1px solid #232740;font-size:12px;margin-bottom:14px"><strong>Riepilogo:</strong> 1ª <span style="color:#93c5fd;font-weight:600">${r.s1.length}</span>${r.s1.length?" (W"+r.s1.join(",W")+")":""} • 2ª <span style="color:#a3e635;font-weight:600">${r.s2.length}</span>${r.s2.length?" (W"+r.s2.join(",W")+")":""} • 3ª <span style="color:#c4b5fd;font-weight:600">${r.s3.length}</span>${r.s3.length?" (W"+r.s3.join(",W")+")":""}</div>`;
+  h+=`<div style="display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap">`;
+  h+=`<button class="btn bsm bd2" onclick="ri[${eid}]={s1:[],s2:[],s3:[],stato:'Da compilare',wA:[],note:''};aL('reset','Reset: ${emp.n}');save();openComp(${eid})">🗑️ Resetta</button>`;
+  h+=`<div style="display:flex;gap:8px"><button class="btn bg2" onclick="closeM();render()">Chiudi</button>`;
+  h+=`<button class="btn bs2" onclick="doApprova(${eid})">✅ Approva e applica</button></div></div>`;
+  openM(h);
+}
+function doApprova(eid){
+  const r=ri[eid];if(!r)return;r.stato="Approvata";
+  const wk=r.s1.length?r.s1:r.s2.length?r.s2:r.s3;r.wA=[...wk];
+  wk.forEach(w=>{pi[`${eid}-W${w}`]="F"});
+  const emp=E.find(e=>e.id===eid);aL("stato","Approvata: "+(emp?emp.n:eid),"WK: "+wk.join(","));
+  save();closeM();render();toast("✅ "+(emp?emp.n:"")+" approvata","success");
+}
+
+// ═══ INIT ═══
+load();initP();initR();initC();save();
+const ss=sessionStorage.getItem("ss");
+if(ss){try{user=JSON.parse(ss);if(user){cv=isA()?"compilazione":"miascheda";render()}else showLogin()}catch(e){showLogin()}}
+else showLogin();
+</script>
+</body>
+</html>
