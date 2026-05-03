@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>SMYB Workflow Engine</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0f0f13;color:#e2e2e8;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── TOPBAR ─────────────────────────────── */
+#topbar{height:50px;background:#16161c;border-bottom:1px solid #25252e;display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;z-index:100}
+.brand{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#fff;letter-spacing:-.2px;white-space:nowrap;flex-shrink:0}
+.brand-icon{width:28px;height:28px;background:linear-gradient(135deg,#5c4ec9,#7B68EE);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-icon svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.divider{width:1px;height:20px;background:#25252e;flex-shrink:0}
+.ftabs-wrap{flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.ftabs-wrap::-webkit-scrollbar{display:none}
+.ftabs{display:flex;gap:3px;padding-right:8px}
+.ftab{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid transparent;color:#555;background:transparent;font-family:inherit;transition:all .12s;white-space:nowrap;flex-shrink:0}
+.ftab:hover{background:#1e1e26;color:#aaa}
+.ftab.act{background:#1e1e26;border-color:#32323e;color:#e2e2e8;font-weight:500}
+.run-btn{padding:6px 11px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:#4f3cc9;color:#fff;font-family:inherit;transition:background .12s;display:flex;align-items:center;gap:4px;white-space:nowrap;flex-shrink:0}
+.run-btn:hover{background:#6b55e0}
+.run-btn svg{width:10px;height:10px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── LAYOUT ─────────────────────────────── */
+#layout{flex:1;display:flex;overflow:hidden;position:relative}
+
+/* ── CANVAS ─────────────────────────────── */
+#canvas-outer{flex:1;overflow:auto;position:relative;background:#0f0f13;background-image:radial-gradient(circle,rgba(255,255,255,.055) 1px,transparent 1px);background-size:24px 24px;-webkit-overflow-scrolling:touch}
+#canvas{position:relative}
+#svg-layer{position:absolute;inset:0;pointer-events:none;overflow:visible}
+
+/* ── SIDEBAR — desktop ───────────────────── */
+#sidebar{width:280px;background:#13131a;border-left:1px solid #1e1e28;display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:transform .25s ease}
+.sb-hdr{padding:16px 16px 12px;border-bottom:1px solid #1e1e28;position:relative}
+.sb-pretitle{font-size:9px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#383848;margin-bottom:5px}
+.sb-title{font-size:14px;font-weight:600;color:#e2e2e8;margin-bottom:3px;line-height:1.3}
+.sb-type{font-size:11px;color:#404055;display:flex;align-items:center;gap:5px}
+.sb-type-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sb-body{padding:14px 16px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sb-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;gap:10px}
+.sb-empty svg{width:28px;height:28px;stroke:#222232;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.sb-empty p{font-size:12px;color:#2a2a3a;line-height:1.6}
+.sb-desc{font-size:12px;color:#7070888;line-height:1.65;margin-bottom:12px;color:#787890}
+.ops-hdr{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#33334a;margin-bottom:7px;margin-top:14px}
+.ops-list{display:flex;flex-direction:column;gap:5px}
+.op-item{display:flex;align-items:center;gap:8px;background:#191922;border:1px solid #22222e;border-radius:7px;padding:7px 10px;font-size:11px;color:#8a8aa0}
+.op-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.kv-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid #191922;font-size:11px;gap:8px}
+.kv-key{color:#404058;flex-shrink:0}
+.kv-val{color:#8080a0;font-family:monospace;font-size:10px;text-align:right;word-break:break-all}
+/* close btn — mobile only */
+.sb-close{display:none;position:absolute;right:12px;top:14px;width:26px;height:26px;background:#1e1e28;border:none;border-radius:50%;color:#666;font-size:16px;cursor:pointer;line-height:26px;text-align:center}
+
+/* ── NODES ──────────────────────────────── */
+.wf-node{position:absolute;background:#1c1c24;border:1px solid #2c2c38;border-radius:10px;cursor:pointer;display:flex;align-items:center;padding:10px 12px 10px 10px;gap:9px;transition:border-color .14s,box-shadow .14s;z-index:10;user-select:none;-webkit-tap-highlight-color:transparent}
+.wf-node:hover,.wf-node:active{border-color:#5a57c9;box-shadow:0 0 0 2px rgba(90,87,201,.2),0 6px 24px rgba(0,0,0,.5)}
+.wf-node.sel{border-color:#4faaff;box-shadow:0 0 0 2px rgba(79,170,255,.2)}
+.wf-node.agent{background:#181822;border-color:#2e2e44}
+.wf-node.agent:hover,.wf-node.agent:active{border-color:#7B68EE;box-shadow:0 0 0 2px rgba(123,104,238,.22)}
+.wf-node.agent.sel{border-color:#7B68EE;box-shadow:0 0 0 2px rgba(123,104,238,.28)}
+.rf-badge{position:absolute;top:-9px;left:10px;background:#0d2240;border:1px solid #1a4a7a;border-radius:4px;padding:2px 7px;font-size:9px;font-weight:600;color:#4faaff;letter-spacing:.3px;display:flex;align-items:center;gap:4px}
+.rf-dot{width:5px;height:5px;background:#4faaff;border-radius:50%}
+.node-icon{width:38px;height:38px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.node-icon svg{width:18px;height:18px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.node-text{flex:1;min-width:0}
+.node-title{font-size:12px;font-weight:600;color:#dcdce4;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-sub{font-size:10px;color:#45455a;margin-top:2px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.port{position:absolute;width:12px;height:12px;background:#0f0f13;border:2px solid #3a3a4e;border-radius:50%;top:50%;transform:translateY(-50%);z-index:20;transition:border-color .12s}
+.wf-node:hover .port{border-color:#5a57c9}
+.port-in{left:-7px}
+.port-out{right:-7px}
+.elabel{position:absolute;font-size:9px;color:#3a3a52;font-weight:600;letter-spacing:.3px;pointer-events:none;background:#0f0f13;padding:0 3px;z-index:5;text-transform:lowercase}
+
+/* ── MOBILE BOTTOM SHEET ─────────────────── */
+@media(max-width:768px){
+  #sidebar{
+    position:fixed;bottom:0;left:0;right:0;width:100%;
+    height:320px;max-height:80dvh;
+    border-left:none;border-top:1px solid #25252e;border-radius:16px 16px 0 0;
+    transform:translateY(100%);
+    z-index:200;box-shadow:0 -8px 32px rgba(0,0,0,.6);
+  }
+  #sidebar.open{transform:translateY(0)}
+  .sb-close{display:block}
+  #layout{flex-direction:column}
+  #canvas-outer{flex:1;width:100%}
+  .sb-hdr{padding:14px 40px 12px 16px}
+  /* handle bar */
+  .sb-hdr::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:3px;background:#333344;border-radius:2px}
+  /* dim overlay */
+  #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:199}
+  #overlay.show{display:block}
+}
+@media(min-width:769px){
+  #overlay{display:none!important}
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#22222e;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    </div>
+    SMYB
+  </div>
+  <div class="divider"></div>
+  <div class="ftabs-wrap">
+    <div class="ftabs">
+      <button class="ftab act" onclick="setTab(0,this)">Inbound Agent</button>
+      <button class="ftab" onclick="setTab(1,this)">Last-Mile Agent</button>
+      <button class="ftab" onclick="setTab(2,this)">KPI Agent</button>
+      <button class="ftab" onclick="setTab(3,this)">Network Overview</button>
+    </div>
+  </div>
+  <button class="run-btn" id="run-btn" onclick="toggleRun(this)">
+    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    Run
+  </button>
+</div>
+
+<div id="layout">
+  <div id="canvas-outer">
+    <div id="canvas">
+      <svg id="svg-layer"></svg>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <div class="sb-hdr">
+      <div class="sb-pretitle">Nodo selezionato</div>
+      <div class="sb-title" id="sb-title">—</div>
+      <div class="sb-type" id="sb-type"></div>
+      <button class="sb-close" onclick="closeSidebar()">×</button>
+    </div>
+    <div class="sb-body" id="sb-body">
+      <div class="sb-empty">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        <p>Tocca un nodo per vedere la configurazione operativa</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<script>
+/* ── ICONS ───────────────────────────── */
+const ICONS = {
+  tr:    `<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/>`,
+  ag:    `<path d="M12 2C8.5 2 6 4.5 6 8c0 2 1 3.8 2.5 5H8l-2 4h12l-2-4h-.5C17 11.8 18 10 18 8c0-3.5-2.5-6-6-6z"/><line x1="9" y1="17" x2="15" y2="17"/>`,
+  ac:    `<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.64 5.64l2.12 2.12M16.24 16.24l2.12 2.12M5.64 18.36l2.12-2.12M16.24 7.76l2.12-2.12"/>`,
+  dt:    `<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v5c0 1.66 3.58 3 8 3s8-1.34 8-3V6"/><path d="M4 11v5c0 1.66 3.58 3 8 3s8-1.34 8-3v-5"/>`,
+  de:    `<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>`,
+  ou:    `<polyline points="20 6 9 17 4 12"/>`,
+  agent: `<rect x="4" y="7" width="16" height="10" rx="2"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><line x1="9" y1="16" x2="15" y2="16"/><line x1="12" y1="3" x2="12" y2="7"/><circle cx="12" cy="3" r="1.3"/>`,
+  mem:   `<rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="6" x2="6" y2="18"/><line x1="10" y1="6" x2="10" y2="18"/><line x1="14" y1="6" x2="14" y2="18"/><line x1="18" y1="6" x2="18" y2="18"/>`,
+};
+const TYPE_COLOR = { tr:'#FF784F', ag:'#9C86FF', ac:'#5090F8', dt:'#08BDD9', de:'#F59E0B', ou:'#10B981', agent:'#9C86FF', mem:'#08BDD9' };
+const TYPE_LABEL = { tr:'Trigger', ag:'AI Model', ac:'Azione', dt:'Dati / DB', de:'Decisione', ou:'Output', agent:'ReadyFlow Agent', mem:'Memoria' };
+
+/* ── WORKFLOW DATA ───────────────────── */
+const TABS = [
+/* 0 ── INBOUND ────────────────────────────────────────── */
+{ w:1060, h:460, nodes:[
+  { id:'tr_in',   x:44,  y:190, w:160, h:58, t:'tr',
+    label:'Prenotazione Truck', sub:'webhook · cron 06:00',
+    detail:'Trigger via portale vettori o webhook TMS. Riceve CMR digitale, verifica slot baia disponibili e avvia il Gate Agent.',
+    kv:[['Tipo','Webhook + Cron'],['Orario','06:00–20:00'],['Input','CMR digitale'],['SLA','Attivo']],
+    acts:['Riceve CMR / nota di carico','Verifica slot baia','Avvia Gate Agent'] },
+  { id:'gate',    x:252, y:170, w:235, h:72, t:'agent', agent:true,
+    label:'Gate Agent', sub:'AI Inbound Agent · Check-in auto',
+    detail:'ReadyFlow Agent che orchestra tutto il processo inbound: check-in autista, verifica DDT, assegnazione baia ottimizzata e avvio cross-docking.',
+    kv:[['Modello','Claude Sonnet'],['Memoria','Window Buffer 20 msg'],['Tool','Gate, DDT, Baia, CrossDock'],['Timeout','8 min']],
+    acts:['Verifica documenti e identità autista','Assegna baia con algoritmo AI','Avvia smistamento cross-dock'] },
+  { id:'claude1', x:290, y:305, w:175, h:58, t:'ag',
+    label:'Claude Sonnet', sub:'chat:model · reasoning',
+    detail:'Chiamato dal Gate Agent per ragionamento complesso: conflitti baia, documenti anomali, priorità non standard. Restituisce azione raccomandata.',
+    kv:[['Model','claude-sonnet-4'],['Max tokens','4096'],['Temp','0.2'],['Mode','Tool use']],
+    acts:['Analisi anomalie documentali','Risoluzione conflitti baia','Escalation priorità'] },
+  { id:'bufmem',  x:68,  y:305, w:160, h:58, t:'mem',
+    label:'Window Buffer', sub:'memory · last 20 msg',
+    detail:'Memoria finestra a 20 messaggi per mantenere il contesto del workflow inbound durante tutta la sessione di check-in.',
+    kv:[['Tipo','Window Buffer'],['Window','20 messaggi'],['Scope','Sessione inbound'],['Reset','Fine turno']],
+    acts:['Mantiene contesto sessione','Storico anomalie turno','Feed al Gate Agent'] },
+  { id:'gate_ok', x:545, y:78,  w:175, h:58, t:'ou',
+    label:'Log Arrivo', sub:'write:event · WMS',
+    detail:'Registra l\'arrivo sul WMS, crea il record DDT in ingresso, aggiorna lo stock atteso e genera il timestamp di inizio operazioni.',
+    kv:[['Target','WMS + ERP'],['Record','DDT + targa + orario'],['Latenza','< 2s'],['Notifica','Capobaia']],
+    acts:['Crea record DDT inbound','Aggiorna stock atteso WMS','Notifica capobaia'] },
+  { id:'gate_ddt',x:545, y:168, w:175, h:58, t:'ac',
+    label:'Verifica DDT', sub:'verify:document · AI',
+    detail:'Confronta i dati del DDT con l\'ordine di acquisto su ERP. Rileva difformità di quantità, articoli, mittente. Segnala anomalie al Gate Agent.',
+    kv:[['Source','DDT PDF/XML'],['Match con','Ordine ERP'],['Tolleranza','±2%'],['Anomalie','→ Alert']],
+    acts:['Estrae dati da DDT','Match con PO ERP','Segnala difformità'] },
+  { id:'gate_bay',x:545, y:258, w:175, h:58, t:'ac',
+    label:'Assegna Baia', sub:'assign:dock · optimizer',
+    detail:'Algoritmo scheduling baia: considera tipo merce, dimensione veicolo, tempi di scarico stimati e congestione attuale del dock.',
+    kv:[['Input','Tipo merce + veicolo'],['Algo','Greedy + priority'],['Output','Baia + slot orario'],['KPI','Attesa < 15min']],
+    acts:['Calcola baia ottimale','Prenota slot temporale','Istruzione autista'] },
+  { id:'success', x:768, y:95,  w:175, h:58, t:'ou',
+    label:'Conferma Baia', sub:'notify:success · SMS/app',
+    detail:'Invia conferma all\'autista con numero baia e slot orario. Aggiorna portale tracking e monitor magazzino.',
+    kv:[['Canale','SMS + App driver'],['Contenuto','Baia N° + slot'],['CC','Monitor magazzino'],['Tempo','< 30s']],
+    acts:['SMS/app autista con baia','Update portale tracking','Monitor magazzino live'] },
+  { id:'crossdock',x:768,y:190, w:175, h:58, t:'dt',
+    label:'Cross-Dock Sort', sub:'scan:barcode · WMS',
+    detail:'Smistamento con scanner handheld. Ogni collo riceve destinazione: last-mile Campania, stock, rientro. KPI: tempo attraversamento target < 2h.',
+    kv:[['Device','Handheld Zebra'],['Output','Destinazione collo'],['KPI','Lead time < 2h'],['Update','WMS real-time']],
+    acts:['Scan barcode/QR ogni collo','Assegna destinazione','Aggiorna WMS live'] },
+  { id:'alert_c', x:768, y:285, w:175, h:58, t:'de',
+    label:'Alert Capobaia', sub:'notify:error · urgente',
+    detail:'Attivato per anomalie: merce non attesa, DDT non corrispondente, veicolo fuori slot. Notifica immediata al capobaia via WhatsApp.',
+    kv:[['Trigger','Anomalia confermata'],['Canale','WhatsApp + email'],['Priorità','Urgente'],['Escalation','→ COO se 3+ alert']],
+    acts:['WhatsApp capobaia immediato','Blocca baia anomala','Log per root cause'] },
+], edges:[
+  { f:'tr_in',    t:'gate',     lbl:'',        suc:false },
+  { f:'bufmem',   t:'gate',     lbl:'memory',  suc:false },
+  { f:'gate',     t:'claude1',  lbl:'model',   suc:false },
+  { f:'gate',     t:'gate_ok',  lbl:'',        suc:false },
+  { f:'gate',     t:'gate_ddt', lbl:'',        suc:false },
+  { f:'gate',     t:'gate_bay', lbl:'',        suc:false },
+  { f:'gate_ok',  t:'success',  lbl:'success', suc:true  },
+  { f:'gate_ddt', t:'crossdock',lbl:'success', suc:true  },
+  { f:'gate_bay', t:'alert_c',  lbl:'error',   suc:false },
+]},
+
+/* 1 ── LAST-MILE ───────────────────────────────────────── */
+{ w:1060, h:460, nodes:[
+  { id:'tr_lm',   x:44,  y:190, w:160, h:58, t:'tr',
+    label:'Ordini Daily', sub:'cron:07:00 · batch ERP',
+    detail:'Trigger cron alle 07:00. Pull automatico da ERP di tutti gli ordini del giorno, filtrati per zona Campania e classificati per urgenza SLA.',
+    kv:[['Orario','07:00 ogni giorno'],['Source','ERP / gestionale'],['Filter','Zona Campania'],['Output','Batch ordini']],
+    acts:['Pull ordini da ERP','Filtra per zona Campania','Classifica urgenza SLA'] },
+  { id:'lm',      x:252, y:170, w:245, h:72, t:'agent', agent:true,
+    label:'Last-Mile Agent', sub:'AI Last-Mile · Fleet Routing',
+    detail:'ReadyFlow Agent per la gestione last-mile SMYB. Orchestra route optimization, assegnazione driver, GPS tracking e gestione POD in zona Campania.',
+    kv:[['Modello','Claude Sonnet'],['Memoria','Window Buffer 30 msg'],['Tool','Route, Driver, GPS, POD'],['Copertura','Campania']],
+    acts:['Route optimization multi-vincolo','Assegna driver ottimale','Gestisce tracking e POD'] },
+  { id:'claude2', x:290, y:305, w:175, h:58, t:'ag',
+    label:'Claude Sonnet', sub:'chat:model · exceptions',
+    detail:'Gestisce eccezioni complesse: clienti assenti, accessi difficili, richieste di richiamo. Ragionamento su casi non standard per il Last-Mile Agent.',
+    kv:[['Model','claude-sonnet-4'],['Specialità','Eccezioni delivery'],['Tool use','Sì'],['Max tokens','2048']],
+    acts:['Gestisce eccezioni consegna','Rerouting dinamico','Comunicazione cliente'] },
+  { id:'bufmem2', x:68,  y:305, w:160, h:58, t:'mem',
+    label:'Window Buffer', sub:'memory · contesto giro',
+    detail:'Memoria sessione giro giornaliero. Tiene traccia dello stato di ogni consegna e delle comunicazioni driver durante il turno.',
+    kv:[['Tipo','Window Buffer'],['Window','30 messaggi'],['Scope','Giro giornaliero'],['Reset','Fine turno']],
+    acts:['Stato consegne live','Storico comunicazioni driver','Feed al Last-Mile Agent'] },
+  { id:'route',   x:548, y:78,  w:175, h:58, t:'ag',
+    label:'Route Optimizer', sub:'compute:route · VRP',
+    detail:'Ottimizzazione percorsi multi-vincolo: time windows cliente, capacità veicolo, traffico real-time, SLA. Riduce km a parità di consegne.',
+    kv:[['Algo','VRP + time windows'],['Input','Ordini + traffico live'],['Output','Sequenza ottimale'],['Risparmio','~18% km']],
+    acts:['Calcola percorso ottimale','Rispetta time windows SLA','Bilancia carico veicoli'] },
+  { id:'driver',  x:548, y:168, w:175, h:58, t:'ac',
+    label:'Assegna Driver', sub:'assign:driver · match',
+    detail:'Abbina il giro al driver più adatto: zona di competenza, tipo patente, veicolo disponibile, storico performance.',
+    kv:[['Match on','Zona + patente + veicolo'],['Output','Driver ID + bolla'],['Notifica','WhatsApp immediato'],['SLA','Conferma < 10 min']],
+    acts:['Match driver/veicolo/giro','Notifica WhatsApp + bolla','Log assegnazione'] },
+  { id:'gps',     x:548, y:258, w:175, h:58, t:'dt',
+    label:'GPS Tracking', sub:'track:position · 30s',
+    detail:'Tracciamento real-time su tutti i veicoli SMYB. Alert per ritardo > 15 min, deviazione percorso, veicolo fermo > 20 min.',
+    kv:[['Fonte','GPS OBD / app driver'],['Refresh','30 secondi'],['Alert','Ritardo/deviazione'],['ETA','Aggiornamento live']],
+    acts:['Track posizione live fleet','Alert su ritardi/anomalie','Aggiorna ETA cliente'] },
+  { id:'pod',     x:768, y:95,  w:175, h:58, t:'ou',
+    label:'POD App', sub:'scan:signature · proof',
+    detail:'Proof of Delivery via app driver. Acquisisce foto collo, firma digitale cliente, geolocalizzazione. Calcola KPI first attempt delivery rate.',
+    kv:[['App','Driver mobile app'],['Data','Foto + firma + GPS'],['KPI','FADR per zona'],['Sync','Real-time cloud']],
+    acts:['Acquisisce POD digitale','Calcola delivery KPI','Sync su cloud ERP'] },
+  { id:'wapp',    x:768, y:190, w:175, h:58, t:'ou',
+    label:'Send WhatsApp', sub:'reply:message · cliente',
+    detail:'Notifica automatica cliente: partenza giro, ETA aggiornato, avviso arrivo, conferma consegna con link POD digitale.',
+    kv:[['Canale','WhatsApp Business API'],['Template','Approvato Meta'],['Invio','Automatico via AI'],['Risposta','Gestita da Agent']],
+    acts:['Notifica partenza giro','ETA update al cliente','Conferma con link POD'] },
+  { id:'alert_r', x:768, y:285, w:175, h:58, t:'de',
+    label:'Alert Ritardo', sub:'notify:delay · SLA breach',
+    detail:'Attivato se ritardo previsto supera la finestra SLA. Notifica CS SMYB e cliente. Il Last-Mile Agent tenta rerouting o riprogrammazione.',
+    kv:[['Trigger','Ritardo > SLA window'],['Notifiche','CS + cliente'],['Azione AI','Rerouting/reschedule'],['Escalation','> 2h → Manager']],
+    acts:['Notifica CS e cliente','Propone rerouting AI','Log per SLA report'] },
+], edges:[
+  { f:'tr_lm',  t:'lm',      lbl:'',        suc:false },
+  { f:'bufmem2',t:'lm',      lbl:'memory',  suc:false },
+  { f:'lm',     t:'claude2', lbl:'model',   suc:false },
+  { f:'lm',     t:'route',   lbl:'',        suc:false },
+  { f:'lm',     t:'driver',  lbl:'',        suc:false },
+  { f:'lm',     t:'gps',     lbl:'',        suc:false },
+  { f:'driver', t:'wapp',    lbl:'success', suc:true  },
+  { f:'gps',    t:'pod',     lbl:'success', suc:true  },
+  { f:'gps',    t:'alert_r', lbl:'error',   suc:false },
+]},
+
+/* 2 ── KPI AGENT ───────────────────────────────────────── */
+{ w:1060, h:460, nodes:[
+  { id:'tr_k',   x:44,  y:190, w:160, h:58, t:'tr',
+    label:'Daily 18:00', sub:'cron:18:00 · scheduled',
+    detail:'Trigger cron alle 18:00. Avvia il ciclo raccolta KPI per tutta la giornata operativa. Retry automatico 3x con 5 min backoff.',
+    kv:[['Orario','18:00 ogni giorno'],['Retry','3x con backoff 5min'],['Scope','Giornata operativa'],['Output','Avvio pipeline KPI']],
+    acts:['Avvio ciclo KPI','Connessione multi-source','Setup template report'] },
+  { id:'kpi_ag', x:252, y:170, w:245, h:72, t:'agent', agent:true,
+    label:'KPI Agent', sub:'AI Analytics · 50 metriche SMYB',
+    detail:'ReadyFlow Agent per analytics e reporting. Raccoglie dati da WMS/TMS/ERP/GPS, calcola 50 KPI operativi, identifica anomalie e genera report automatici.',
+    kv:[['Modello','Claude Sonnet'],['KPI','50 metriche operative'],['Source','WMS+TMS+ERP+GPS'],['Output','PDF + Qlik + Email']],
+    acts:['Raccolta dati multi-source','Calcolo 50 KPI operativi','Report + alert automatici'] },
+  { id:'claude3',x:290, y:305, w:175, h:58, t:'ag',
+    label:'Claude Sonnet', sub:'chat:model · analytics',
+    detail:'Interpreta KPI, identifica pattern anomali, redige il commento executive per il report management e suggerisce azioni correttive in italiano.',
+    kv:[['Model','claude-sonnet-4'],['Task','Interpretation + narrative'],['Output','Executive summary'],['Lingua','IT']],
+    acts:['Interpreta trend KPI','Identifica anomalie pattern','Redige executive summary'] },
+  { id:'simem',  x:68,  y:305, w:160, h:58, t:'mem',
+    label:'Simple Memory', sub:'memory · storico 30gg',
+    detail:'Memoria persistente per storico KPI. Mantiene valori ultime 30 giornate per calcolo trend, benchmark e confronto settimana/mese.',
+    kv:[['Tipo','Simple Memory'],['Storico','30 giorni'],['Scope','KPI operativi'],['Query','Trend + benchmark']],
+    acts:['Storico 30gg KPI','Benchmark trend settimanale','Feed al KPI Agent'] },
+  { id:'getd',   x:548, y:78,  w:175, h:58, t:'dt',
+    label:'Get Data WMS', sub:'query:multi-source · ETL',
+    detail:'Query consolidata su WMS, TMS, ERP e GPS fleet. Estrae: consegne del giorno, throughput warehouse, costi per collo, revenue per driver.',
+    kv:[['Source','WMS+TMS+ERP+GPS'],['Formato','JSON normalizzato'],['Pulizia','Outlier detection'],['Latenza','< 45s']],
+    acts:['Query WMS+TMS+ERP','Consolida e normalizza dati','Rimuove outlier'] },
+  { id:'calcola',x:548, y:168, w:175, h:58, t:'ag',
+    label:'Calcola KPI', sub:'compute:50kpi · benchmark',
+    detail:'Calcola i 50 KPI SMYB: OTIF, costo/collo, revenue/driver, saturazione warehouse, throughput/ora, incidenza logistica per cliente, fuel efficiency.',
+    kv:[['KPI','50 metriche'],['Benchmark','vs target e vs ieri'],['Output','DataFrame JSON'],['Freq','1x/giorno']],
+    acts:['Calcola 50 KPI operativi','Confronta vs target','Analisi trend settimanale'] },
+  { id:'soglie', x:548, y:258, w:175, h:58, t:'de',
+    label:'Check Soglie', sub:'decision:threshold · routing',
+    detail:'Verifica ogni KPI vs soglia. Routing: KPI critico < soglia → alert COO immediato. Anomalia strutturale → root cause. Else → report standard.',
+    kv:[['Soglie','Configurabili per KPI'],['Routing','3 path: alert/RCA/std'],['Urgente','< 30s notifica'],['Log','Audit trail completo']],
+    acts:['Check KPI vs soglie','Classifica urgenza','Routing: alert/RCA/report'] },
+  { id:'alertcoo',x:768,y:78,  w:175, h:58, t:'de',
+    label:'Alert COO', sub:'notify:urgent · WhatsApp',
+    detail:'Notifica immediata al COO per KPI critici fuori soglia. WhatsApp + email con KPI specifico, scostamento percentuale e suggerimento azione.',
+    kv:[['Trigger','KPI < soglia critica'],['Canale','WhatsApp + email'],['Contenuto','KPI + scostamento + azione'],['SLA','< 2 min']],
+    acts:['WhatsApp COO immediato','Email con dati KPI','Suggerisce azione correttiva'] },
+  { id:'report', x:768, y:175, w:175, h:58, t:'ou',
+    label:'Report PDF', sub:'generate:report · management',
+    detail:'Genera PDF automatico con KPI giornalieri, confronto vs target, trend settimanale e commento executive AI. Inviato via email al management.',
+    kv:[['Formato','PDF + Excel'],['Destinatari','Management team'],['Contenuto','50 KPI + narrative'],['Invio','Entro 18:30']],
+    acts:['Genera PDF report completo','Email management team','Allega Excel dati raw'] },
+  { id:'qlik',   x:768, y:272, w:175, h:58, t:'dt',
+    label:'Qlik BI Update', sub:'upsert:dashboard · live',
+    detail:'Aggiorna il dataset Qlik Sense con i KPI calcolati. Dashboard management auto-refresh. Archivia nel data warehouse per analisi storiche.',
+    kv:[['Target','Qlik Sense + DW'],['Update','JSON via API'],['Dashboard','Auto-refresh'],['Archivio','Data warehouse']],
+    acts:['Update dataset Qlik','Refresh dashboard auto','Archivia su data warehouse'] },
+], edges:[
+  { f:'tr_k',   t:'kpi_ag', lbl:'',        suc:false },
+  { f:'simem',  t:'kpi_ag', lbl:'memory',  suc:false },
+  { f:'kpi_ag', t:'claude3',lbl:'model',   suc:false },
+  { f:'kpi_ag', t:'getd',   lbl:'',        suc:false },
+  { f:'kpi_ag', t:'calcola',lbl:'',        suc:false },
+  { f:'kpi_ag', t:'soglie', lbl:'',        suc:false },
+  { f:'soglie', t:'alertcoo',lbl:'alert',  suc:false },
+  { f:'calcola',t:'report', lbl:'success', suc:true  },
+  { f:'report', t:'qlik',   lbl:'success', suc:true  },
+]},
+
+/* 3 ── NETWORK OVERVIEW ─────────────────────────────────── */
+{ w:1300, h:600, nodes:[
+  { id:'ov_gate', x:55,  y:90,  w:210, h:68, t:'agent', agent:true,
+    label:'Gate Agent',      sub:'AI Inbound · Check-in',
+    detail:'ReadyFlow Agent inbound: check-in autista, verifica DDT, assegnazione baia, cross-docking.',
+    kv:[['Scope','Inbound completo'],['Tool','5 azioni'],['KPI','Attesa media baia']],
+    acts:['Check-in automatizzato','Assegnazione baia AI','Cross-dock smistamento'] },
+  { id:'ov_log',  x:325, y:48,  w:155, h:52, t:'ou',
+    label:'Log Arrivo',  sub:'write:WMS', detail:'Registra arrivo e DDT sul WMS.',kv:[],acts:['Crea record DDT','Aggiorna WMS'] },
+  { id:'ov_baia', x:325, y:120, w:155, h:52, t:'ac',
+    label:'Assegna Baia',sub:'assign:dock', detail:'Algoritmo scheduling baia.',kv:[],acts:['Calcola baia ottimale','Prenota slot'] },
+  { id:'ov_cdock',x:325, y:192, w:155, h:52, t:'dt',
+    label:'Cross-Dock',  sub:'scan:sort', detail:'Smistamento colli con handheld.',kv:[],acts:['Scan barcode','Assegna destinazione'] },
+  { id:'ov_conf', x:535, y:90,  w:155, h:52, t:'ou',
+    label:'Conferma Baia',sub:'success', detail:'SMS autista + update tracking.',kv:[],acts:['SMS autista','Update portale'] },
+
+  { id:'ov_lm',   x:730, y:90,  w:220, h:68, t:'agent', agent:true,
+    label:'Last-Mile Agent', sub:'AI Last-Mile · Fleet Routing',
+    detail:'ReadyFlow Agent per routing, assegnazione driver, GPS tracking e POD in zona Campania.',
+    kv:[['Scope','Last-mile Campania'],['Fleet','Multi-veicolo'],['KPI','FADR + OTIF']],
+    acts:['Route optimization','Assegna driver','GPS + POD gestione'] },
+  { id:'ov_route',x:1010,y:48,  w:155, h:52, t:'ag',
+    label:'Route Optimizer', sub:'compute:route', detail:'Ottimizzazione VRP multi-vincolo.',kv:[],acts:['Calcola percorso','Bilancia carico'] },
+  { id:'ov_drv',  x:1010,y:120, w:155, h:52, t:'ac',
+    label:'Assegna Driver',  sub:'assign:driver', detail:'Match driver/veicolo/giro.',kv:[],acts:['Match ottimale','Notifica WhatsApp'] },
+  { id:'ov_pod',  x:1010,y:192, w:155, h:52, t:'ou',
+    label:'POD & Notifica',  sub:'success · cliente', detail:'POD digitale e notifica cliente.',kv:[],acts:['Acquisisce POD','Notifica cliente'] },
+
+  { id:'ov_disp', x:55,  y:340, w:210, h:68, t:'agent', agent:true,
+    label:'Dispatch Agent',  sub:'AI Routing · Ordini ERP',
+    detail:'ReadyFlow Agent per gestione ordini e dispatch: pull ERP, routing, aggiornamento WMS.',
+    kv:[['Scope','Ordini e dispatch'],['Source','ERP multi-client'],['Output','WMS + bolla']],
+    acts:['Pull ordini ERP','Route ordini','Aggiorna WMS'] },
+  { id:'ov_erp',  x:325, y:315, w:155, h:52, t:'dt',
+    label:'Get Ordini ERP',  sub:'search:record', detail:'Estrae e classifica ordini da ERP.',kv:[],acts:['Query ERP','Filtra e classifica'] },
+  { id:'ov_wms2', x:325, y:390, w:155, h:52, t:'dt',
+    label:'Update WMS',      sub:'upsert:record', detail:'Aggiorna WMS con stato ordini.',kv:[],acts:['Upsert record WMS','Sync stato'] },
+
+  { id:'ov_kpi',  x:730, y:340, w:220, h:68, t:'agent', agent:true,
+    label:'KPI Agent',       sub:'AI Analytics · 50 KPI',
+    detail:'ReadyFlow Agent per raccolta dati, calcolo KPI, check soglie e reporting management.',
+    kv:[['Scope','Analytics totale'],['KPI','50 metriche'],['Report','PDF + Qlik']],
+    acts:['ETL dati operativi','Calcola 50 KPI','Report + alert'] },
+  { id:'ov_calc', x:1010,y:315, w:155, h:52, t:'ag',
+    label:'Calcola KPI',     sub:'compute:50kpi', detail:'Calcola 50 KPI operativi con benchmark.',kv:[],acts:['50 KPI','Benchmark'] },
+  { id:'ov_rep',  x:1010,y:390, w:155, h:52, t:'ou',
+    label:'Report & Qlik',   sub:'generate · dashboard', detail:'PDF report + update Qlik BI.',kv:[],acts:['Genera PDF','Update Qlik BI'] },
+
+  { id:'telegram',x:55,  y:510, w:155, h:52, t:'tr',
+    label:'Telegram Trigger',sub:'updates:message', detail:'Trigger via Telegram Bot per comandi COO verso il Master Orchestrator.',kv:[],acts:['Riceve messaggio COO','Attiva Master Agent'] },
+  { id:'voice',   x:250, y:510, w:160, h:52, t:'ac',
+    label:'Voice or Text',   sub:'mode:rules · parser', detail:'Classifica e normalizza l\'input per il Master Agent.',kv:[],acts:['Classifica input','Normalizza richiesta'] },
+  { id:'master',  x:488, y:492, w:285, h:72, t:'agent', agent:true,
+    label:'Master COO Orchestrator', sub:'AI Centrale · Full Automation SMYB',
+    detail:'Agente principale che orchestra tutti i ReadyFlow Agents come tool. Risponde ai comandi COO via Telegram, gestisce priorità e coordina flussi in conflitto.',
+    kv:[['Tool','Gate+LastMile+Dispatch+KPI'],['Input','Telegram/Voce/Cron'],['Scope','Full SMYB ops'],['Modello','Claude Opus']],
+    acts:['Coordina tutti gli agent','Risponde a comandi COO','Gestisce priorità e conflitti'] },
+  { id:'ov_buf',  x:845, y:505, w:155, h:52, t:'mem',
+    label:'Window Buffer',   sub:'memory · master context', detail:'Memoria di sessione per il Master COO Agent.',kv:[],acts:['Contesto operazioni','Feed Master Agent'] },
+], edges:[
+  { f:'ov_gate',t:'ov_log',  lbl:'',        suc:false },
+  { f:'ov_gate',t:'ov_baia', lbl:'',        suc:false },
+  { f:'ov_gate',t:'ov_cdock',lbl:'',        suc:false },
+  { f:'ov_baia',t:'ov_conf', lbl:'success', suc:true  },
+  { f:'ov_lm',  t:'ov_route',lbl:'',        suc:false },
+  { f:'ov_lm',  t:'ov_drv',  lbl:'',        suc:false },
+  { f:'ov_drv', t:'ov_pod',  lbl:'success', suc:true  },
+  { f:'ov_disp',t:'ov_erp',  lbl:'',        suc:false },
+  { f:'ov_disp',t:'ov_wms2', lbl:'',        suc:false },
+  { f:'ov_kpi', t:'ov_calc', lbl:'',        suc:false },
+  { f:'ov_kpi', t:'ov_rep',  lbl:'',        suc:false },
+  { f:'master', t:'ov_gate', lbl:'tool',    suc:false, dashed:true },
+  { f:'master', t:'ov_disp', lbl:'tool',    suc:false, dashed:true },
+  { f:'master', t:'ov_lm',   lbl:'tool',    suc:false, dashed:true },
+  { f:'master', t:'ov_kpi',  lbl:'tool',    suc:false, dashed:true },
+  { f:'telegram',t:'voice',  lbl:'',        suc:false },
+  { f:'voice',  t:'master',  lbl:'',        suc:false },
+  { f:'ov_buf', t:'master',  lbl:'memory',  suc:false },
+]}
+];
+
+/* ── RENDER ENGINE ──────────────────── */
+let currentTab=0, running=false;
+const canvas=document.getElementById('canvas');
+const svg=document.getElementById('svg-layer');
+
+function nodeById(tab,id){ return tab.nodes.find(n=>n.id===id); }
+function portOut(n){ return {x:n.x+n.w, y:n.y+n.h/2}; }
+function portIn(n){  return {x:n.x,     y:n.y+n.h/2}; }
+
+function bezier(src,dst){
+  const s=portOut(src), d=portIn(dst);
+  const c=Math.min(Math.max(Math.abs(d.x-s.x)*.45,55),180);
+  return `M${s.x} ${s.y} C${s.x+c} ${s.y} ${d.x-c} ${d.y} ${d.x} ${d.y}`;
+}
+
+function renderTab(ti){
+  const tab=TABS[ti];
+  canvas.style.width=tab.w+'px';
+  canvas.style.height=tab.h+'px';
+  svg.setAttribute('width',tab.w);
+  svg.setAttribute('height',tab.h);
+  svg.setAttribute('viewBox',`0 0 ${tab.w} ${tab.h}`);
+  svg.innerHTML='';
+  canvas.querySelectorAll('.wf-node,.elabel').forEach(e=>e.remove());
+  closeSidebar();
+
+  // Defs
+  svg.innerHTML=`<defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker></defs>`;
+
+  // Edges
+  tab.edges.forEach((e,i)=>{
+    const src=nodeById(tab,e.f), dst=nodeById(tab,e.t);
+    if(!src||!dst) return;
+    const d=bezier(src,dst);
+    const pid=`p${ti}_${i}`;
+    const col=e.suc?'#10B981':e.dashed?'#2e2e50':'#252535';
+    const dash=e.dashed?'6 4':'none';
+
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('id',pid);
+    path.setAttribute('d',d);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke',col);
+    path.setAttribute('stroke-width','1.8');
+    path.setAttribute('stroke-dasharray',dash);
+    path.setAttribute('marker-end','url(#ar)');
+    svg.appendChild(path);
+
+    if(e.lbl){
+      const s=portOut(src),dst2=portIn(dst);
+      const lbl=document.createElement('div');
+      lbl.className='elabel';
+      lbl.textContent=e.lbl;
+      lbl.style.left=((s.x+dst2.x)/2-10)+'px';
+      lbl.style.top=((s.y+dst2.y)/2-7)+'px';
+      lbl.style.color=e.suc?'#10B981':'#353555';
+      canvas.appendChild(lbl);
+    }
+
+    if(running){
+      const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('r',e.dashed?'3.5':'4.5');
+      dot.setAttribute('fill',e.suc?'#10B981':e.dashed?'#5a57c9':'#9C86FF');
+      dot.setAttribute('opacity','0.92');
+      const anim=document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+      anim.setAttribute('dur',(1.5+i*.28)+'s');
+      anim.setAttribute('repeatCount','indefinite');
+      anim.setAttribute('begin',(i*.14)+'s');
+      const mpath=document.createElementNS('http://www.w3.org/2000/svg','mpath');
+      mpath.setAttributeNS('http://www.w3.org/1999/xlink','href','#'+pid);
+      anim.appendChild(mpath);
+      dot.appendChild(anim);
+      svg.appendChild(dot);
+    }
+  });
+
+  // Nodes
+  tab.nodes.forEach(n=>{
+    const el=document.createElement('div');
+    el.className='wf-node'+(n.agent?' agent':'');
+    el.dataset.id=n.id;
+    el.style.cssText=`left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px`;
+    const ic=n.t==='mem'?'mem':(n.agent?'agent':n.t);
+    el.innerHTML=`
+      ${n.agent?'<div class="rf-badge"><div class="rf-dot"></div>ReadyFlow</div>':''}
+      <div class="port port-in"></div>
+      <div class="node-icon ic-${n.agent?'agent':n.t}">
+        <svg viewBox="0 0 24 24">${ICONS[ic]||ICONS.ac}</svg>
+      </div>
+      <div class="node-text">
+        <div class="node-title">${n.label}</div>
+        <div class="node-sub">${n.sub}</div>
+      </div>
+      <div class="port port-out"></div>`;
+    el.addEventListener('click',()=>selectNode(n,el));
+    canvas.appendChild(el);
+  });
+}
+
+function selectNode(n,el){
+  canvas.querySelectorAll('.wf-node').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+  const col=TYPE_COLOR[n.t]||'#9C86FF';
+  document.getElementById('sb-title').textContent=n.label;
+  document.getElementById('sb-type').innerHTML=`<div class="sb-type-dot" style="background:${col}"></div>${TYPE_LABEL[n.t]||'Nodo'} · ${n.sub}`;
+  let kv='',ops='';
+  if(n.kv&&n.kv.length){
+    kv='<div class="ops-hdr" style="margin-top:12px">Parametri</div>';
+    n.kv.forEach(([k,v])=>{ kv+=`<div class="kv-row"><span class="kv-key">${k}</span><span class="kv-val">${v}</span></div>`; });
+  }
+  if(n.acts&&n.acts.length){
+    ops='<div class="ops-hdr" style="margin-top:12px">Operazioni</div><div class="ops-list">';
+    n.acts.forEach(a=>{ ops+=`<div class="op-item"><div class="op-dot" style="background:${col}"></div>${a}</div>`; });
+    ops+='</div>';
+  }
+  document.getElementById('sb-body').innerHTML=`<div class="sb-desc">${n.detail||''}</div>${kv}${ops}`;
+  // Open on mobile
+  const sb=document.getElementById('sidebar');
+  sb.classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  canvas.querySelectorAll('.wf-node').forEach(e=>e.classList.remove('sel'));
+}
+
+function setTab(i,btn){
+  currentTab=i;
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  renderTab(i);
+}
+
+function toggleRun(btn){
+  running=!running;
+  if(running){
+    btn.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>Stop';
+    btn.style.background='#1a6040';
+  } else {
+    btn.innerHTML='<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>Run';
+    btn.style.background='#4f3cc9';
+  }
+  renderTab(currentTab);
+}
+
+/* Init */
+renderTab(0);
+
+/* Scroll canvas to show agent node on load */
+setTimeout(()=>{ document.getElementById('canvas-outer').scrollLeft=0; },100);
+</script>
+</body>
+</html>
