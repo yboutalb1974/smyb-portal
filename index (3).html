@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMYB Operations Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080810;
+  --bg2:#0e0e1a;
+  --bg3:#141420;
+  --border:#1e1e2e;
+  --border2:#2a2a3e;
+  --text:#e8e6f0;
+  --text2:#7070909;
+  --text2:#606080;
+  --text3:#32324a;
+  --accent:#7B68EE;
+  --accent2:#5090F8;
+  --green:#10B981;
+  --orange:#F59E0B;
+  --red:#FF784F;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Syne',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── BACKGROUND ──────────────────────────────────── */
+.bg-grid{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(123,104,238,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(123,104,238,.03) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+.bg-glow{
+  position:fixed;top:-200px;left:50%;transform:translateX(-50%);
+  width:900px;height:500px;
+  background:radial-gradient(ellipse at center,rgba(90,70,200,.12) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+.bg-glow2{
+  position:fixed;bottom:-100px;right:-100px;
+  width:500px;height:500px;
+  background:radial-gradient(ellipse at center,rgba(16,185,129,.06) 0%,transparent 70%);
+  pointer-events:none;z-index:0;
+}
+
+/* ── NAV ─────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(8,8,16,.85);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 32px;
+  height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.nav-brand{display:flex;align-items:center;gap:11px}
+.nav-logo{
+  width:32px;height:32px;
+  background:linear-gradient(135deg,#5c4ec9,#7B68EE);
+  border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.nav-logo svg{width:16px;height:16px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.nav-name{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.nav-name span{color:var(--accent)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-tag{
+  font-family:'DM Mono',monospace;
+  font-size:10px;color:var(--text3);
+  border:1px solid var(--border2);
+  border-radius:4px;padding:3px 8px;letter-spacing:.5px;
+}
+.nav-dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green)}
+
+/* ── HERO ────────────────────────────────────────── */
+.hero{
+  position:relative;z-index:1;
+  padding:80px 32px 60px;
+  max-width:900px;margin:0 auto;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:500;
+  color:var(--accent);letter-spacing:.8px;text-transform:uppercase;
+  border:1px solid rgba(123,104,238,.25);border-radius:100px;
+  padding:5px 14px;margin-bottom:24px;
+  background:rgba(123,104,238,.06);
+}
+.hero-eyebrow span{width:5px;height:5px;background:var(--accent);border-radius:50%;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+h1{
+  font-size:clamp(36px,6vw,64px);
+  font-weight:800;
+  line-height:1.05;
+  letter-spacing:-1.5px;
+  margin-bottom:20px;
+}
+h1 .line1{display:block;color:var(--text)}
+h1 .line2{
+  display:block;
+  background:linear-gradient(90deg,#7B68EE,#5090F8,#10B981);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{
+  font-size:16px;color:var(--text2);line-height:1.7;
+  max-width:520px;margin-bottom:36px;font-weight:400;
+}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat-n{font-size:22px;font-weight:700;letter-spacing:-1px}
+.stat-l{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.5px;text-transform:uppercase}
+
+/* ── SECTION ─────────────────────────────────────── */
+section{position:relative;z-index:1;padding:0 32px 80px;max-width:900px;margin:0 auto}
+.sec-hdr{
+  display:flex;align-items:baseline;gap:12px;
+  margin-bottom:24px;padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+.sec-title{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text3)}
+.sec-line{flex:1;height:1px;background:var(--border)}
+
+/* ── CARDS ───────────────────────────────────────── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:22px;
+  text-decoration:none;
+  color:inherit;
+  display:flex;flex-direction:column;gap:0;
+  transition:border-color .16s,transform .16s,box-shadow .16s;
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 50%,rgba(123,104,238,.04));
+  opacity:0;transition:opacity .2s;
+}
+.card:hover{
+  border-color:var(--border2);
+  transform:translateY(-2px);
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+.card:hover::before{opacity:1}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.card-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.card-icon svg{width:19px;height:19px;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.card-badge{
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:500;
+  border-radius:4px;padding:3px 7px;letter-spacing:.4px;text-transform:uppercase;
+}
+.card-title{font-size:15px;font-weight:700;letter-spacing:-.2px;margin-bottom:7px;line-height:1.3}
+.card-desc{font-size:12px;color:var(--text2);line-height:1.65;flex:1;margin-bottom:16px}
+.card-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:14px;border-top:1px solid var(--border);
+}
+.card-tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--text3);border:1px solid var(--border2);
+  border-radius:4px;padding:2px 6px;letter-spacing:.3px;
+}
+.card-arrow{
+  width:28px;height:28px;border-radius:7px;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .12s,transform .12s;
+}
+.card:hover .card-arrow{background:var(--border2);transform:translateX(2px)}
+.card-arrow svg{width:13px;height:13px;stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── COLOR VARIANTS ──────────────────────────────── */
+.c-purple .card-icon{background:rgba(123,104,238,.12)}
+.c-purple .card-icon svg{stroke:#9C86FF}
+.c-purple .card-badge{background:rgba(123,104,238,.1);color:#9C86FF}
+.c-purple .stat-n{color:#9C86FF}
+
+.c-blue .card-icon{background:rgba(80,144,248,.12)}
+.c-blue .card-icon svg{stroke:#5090F8}
+.c-blue .card-badge{background:rgba(80,144,248,.1);color:#5090F8}
+.c-blue .stat-n{color:#5090F8}
+
+.c-green .card-icon{background:rgba(16,185,129,.12)}
+.c-green .card-icon svg{stroke:#10B981}
+.c-green .card-badge{background:rgba(16,185,129,.1);color:#10B981}
+.c-green .stat-n{color:#10B981}
+
+.c-orange .card-icon{background:rgba(245,158,11,.12)}
+.c-orange .card-icon svg{stroke:#F59E0B}
+.c-orange .card-badge{background:rgba(245,158,11,.1);color:#F59E0B}
+.c-orange .stat-n{color:#F59E0B}
+
+.c-red .card-icon{background:rgba(255,120,79,.12)}
+.c-red .card-icon svg{stroke:#FF784F}
+.c-red .card-badge{background:rgba(255,120,79,.1);color:#FF784F}
+
+/* ── FEATURED CARD (wide) ────────────────────────── */
+.card-featured{
+  grid-column:1/-1;
+  flex-direction:row;align-items:center;gap:24px;
+  background:linear-gradient(135deg,#0e0e1e,#141428);
+  border-color:#252545;
+}
+.card-featured .card-body{flex:1}
+.card-featured .card-icon{width:52px;height:52px;flex-shrink:0}
+.card-featured .card-icon svg{width:24px;height:24px}
+@media(max-width:560px){.card-featured{flex-direction:column}}
+
+/* ── INFO GRID ───────────────────────────────────── */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.info-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:16px;display:flex;flex-direction:column;gap:6px;
+}
+.info-card-title{font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.4px;text-transform:uppercase}
+.info-card-val{font-size:20px;font-weight:700;letter-spacing:-.5px}
+.info-card-sub{font-size:11px;color:var(--text3);line-height:1.5}
+
+/* ── HOW-TO ──────────────────────────────────────── */
+.steps{display:flex;flex-direction:column;gap:0}
+.step{
+  display:flex;gap:18px;padding:18px 0;
+  border-bottom:1px solid var(--border);
+}
+.step:last-child{border-bottom:none}
+.step-num{
+  width:30px;height:30px;border-radius:8px;
+  background:var(--bg3);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--text3);
+}
+.step-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.step-code{
+  display:inline-block;font-family:'DM Mono',monospace;font-size:11px;
+  background:var(--bg3);border:1px solid var(--border2);border-radius:5px;
+  padding:2px 7px;color:var(--accent);margin-top:4px;
+}
+
+/* ── FOOTER ──────────────────────────────────────── */
+footer{
+  position:relative;z-index:1;
+  border-top:1px solid var(--border);
+  padding:24px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+}
+.footer-brand{font-size:12px;color:var(--text3)}
+.footer-brand strong{color:var(--text2)}
+.footer-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+
+/* ── ANIMATIONS ──────────────────────────────────── */
+@keyframes fadein{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.hero{animation:fadein .6s ease both}
+.card{animation:fadein .5s ease both}
+.card:nth-child(1){animation-delay:.05s}
+.card:nth-child(2){animation-delay:.1s}
+.card:nth-child(3){animation-delay:.15s}
+.card:nth-child(4){animation-delay:.2s}
+.card:nth-child(5){animation-delay:.25s}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    </div>
+    <span class="nav-name">SMYB <span>Ops</span> Portal</span>
+  </div>
+  <div class="nav-right">
+    <span class="nav-tag">Campania · 3PL</span>
+    <div class="nav-dot"></div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow"><span></span>Operations Intelligence Suite</div>
+  <h1>
+    <span class="line1">Tutti gli strumenti</span>
+    <span class="line2">SMYB in un posto.</span>
+  </h1>
+  <p class="hero-sub">Process mapping, VSM, workflow design e generazione AI dei flussi operativi — costruiti specificamente per le operations di SMYB Spa.</p>
+  <div class="hero-stats">
+    <div class="stat c-purple"><span class="stat-n">4</span><span class="stat-l">Strumenti</span></div>
+    <div class="stat c-green"><span class="stat-n">3</span><span class="stat-l">Workflow precaricati</span></div>
+    <div class="stat c-blue"><span class="stat-n">2</span><span class="stat-l">VSM SMYB</span></div>
+    <div class="stat c-orange"><span class="stat-n">50</span><span class="stat-l">KPI mappati</span></div>
+  </div>
+</div>
+
+<!-- TOOLS -->
+<section>
+  <div class="sec-hdr">
+    <span class="sec-title">Strumenti operativi</span>
+    <div class="sec-line"></div>
+  </div>
+  <div class="cards">
+
+    <!-- SMYB Studio AI — featured -->
+    <a class="card card-featured c-purple" href="SMYB_Studio_AI.html">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.5 2 6 4.5 6 8c0 2 1 3.8 2.5 5H8l-2 4h12l-2-4h-.5C17 11.8 18 10 18 8c0-3.5-2.5-6-6-6z"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span class="card-badge">✦ Principale</span>
+          <span class="card-badge" style="background:rgba(16,185,129,.1);color:#10B981">AI Powered</span>
+        </div>
+        <div class="card-title">SMYB Studio AI</div>
+        <div class="card-desc">Editor BPM + VSM completo con generazione AI integrata. Descrivi un processo in italiano e il sistema genera automaticamente nodi, connessioni, responsabili e tempi sul canvas. Salvataggio locale e export JSON.</div>
+        <div class="card-footer">
+          <div class="card-tags">
+            <span class="tag">BPM</span><span class="tag">VSM</span><span class="tag">AI Generate</span><span class="tag">Drag & Drop</span>
+          </div>
+          <div class="card-arrow"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        </div>
+      </div>
+    </a>
+
+    <!-- Studio base -->
+    <a class="card c-blue" href="SMYB_Studio.html">
+      <div class="card-top">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </div>
+        <span class="card-badge">Studio</span>
+      </div>
+      <div class="card-title">SMYB Studio</div>
+      <div class="card-desc">Versione base del process studio con BPM Flow e VSM. Ideale per presentazioni e condivisione con il team senza dipendenze AI. Include i template Inbound, Last-Mile e KPI Monitor.</div>
+      <div class="card-footer">
+        <div class="card-tags"><span class="tag">BPM</span><span class="tag">VSM</span><span class="tag">Lean</span></div>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </a>
+
+    <!-- Workflow editor -->
+    <a class="card c-green" href="SMYB_workflow_editor.html">
+      <div class="card-top">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        </div>
+        <span class="card-badge">Editor</span>
+      </div>
+      <div class="card-title">Workflow Editor</div>
+      <div class="card-desc">Editor flussi operativi con palette nodi, connessioni drag & drop, proprietà per responsabile e tipo esecuzione. Modalità Run per animare i flussi durante le presentazioni al team.</div>
+      <div class="card-footer">
+        <div class="card-tags"><span class="tag">n8n-style</span><span class="tag">Animato</span><span class="tag">Multi-tab</span></div>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </a>
+
+    <!-- Workflow viewer -->
+    <a class="card c-orange" href="SMYB_n8n_v2.html">
+      <div class="card-top">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v5c0 1.66 3.58 3 8 3s8-1.34 8-3V6"/><path d="M4 11v5c0 1.66 3.58 3 8 3s8-1.34 8-3v-5"/></svg>
+        </div>
+        <span class="card-badge">Viewer</span>
+      </div>
+      <div class="card-title">Agent Workflow Viewer</div>
+      <div class="card-desc">Vista read-only dei flussi agente SMYB in stile n8n. Quattro viste: Inbound Agent, Last-Mile Agent, KPI Agent e Network Overview con il Master COO Orchestrator.</div>
+      <div class="card-footer">
+        <div class="card-tags"><span class="tag">ReadyFlow</span><span class="tag">Agenti AI</span><span class="tag">Overview</span></div>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </a>
+<!-- Gestione Ferie -->
+    <a class="card c-red" href="gestione-ferie-smyb.html">
+      <div class="card-top">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <span class="card-badge">HR</span>
+      </div>
+      <div class="card-title">Gestione Ferie SMYB</div>
+      <div class="card-desc">Piano ferie estive 2026. Gestione richieste, approvazioni e calendario team SMYB.</div>
+      <div class="card-footer">
+        <div class="card-tags"><span class="tag">HR</span><span class="tag">Team</span><span class="tag">2026</span></div>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </a>
+
+<!-- RACI Workbook -->
+    <a class="card c-blue" href="SMYB_RACI_Integrato_v11 (3).html" target="_blank">
+      <div class="card-top">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/><text x="12" y="7" text-anchor="middle" font-size="5" fill="currentColor">R</text></svg>
+        </div>
+        <span class="card-badge">GOVERNANCE</span>
+      </div>
+      <div class="card-title">RACI Workbook</div>
+      <div class="card-desc">Governance & RACI completo SMYB. 27 ruoli · 23 processi · Decision Rights · KPI Dashboard · Supply Chain Matrix.</div>
+      <div class="card-footer">
+        <div class="card-tags"><span class="tag">RACI</span><span class="tag">KPI</span><span class="tag">Governance</span></div>
+        <div class="card-arrow"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- COSA FA OGNI STRUMENTO -->
+<section>
+  <div class="sec-hdr">
+    <span class="sec-title">Quando usare cosa</span>
+    <div class="sec-line"></div>
+  </div>
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-card-title" style="color:#9C86FF">Studio AI</div>
+      <div class="info-card-val" style="font-size:14px;color:#e2e2e8">Lavoro quotidiano</div>
+      <div class="info-card-sub">Progettare nuovi flussi, mappare processi con il team, generare VSM da descrizione testuale</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title" style="color:#5090F8">Studio base</div>
+      <div class="info-card-val" style="font-size:14px;color:#e2e2e8">Presentazioni</div>
+      <div class="info-card-sub">Mostrare i processi a partner, board o clienti senza dipendere dall'API AI</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title" style="color:#10B981">Workflow Editor</div>
+      <div class="info-card-val" style="font-size:14px;color:#e2e2e8">Team & training</div>
+      <div class="info-card-sub">Formare nuovi operatori, documentare SOP, animare i flussi nelle riunioni operative</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title" style="color:#F59E0B">Agent Viewer</div>
+      <div class="info-card-val" style="font-size:14px;color:#e2e2e8">Pitch 4PL</div>
+      <div class="info-card-sub">Mostrare la visione tecnologica SMYB a interlocutori executive e investitori</div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPLOY GUIDE -->
+<section>
+  <div class="sec-hdr">
+    <span class="sec-title">Come aggiornare il portale</span>
+    <div class="sec-line"></div>
+  </div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div>
+        <div class="step-title">Netlify — drag & drop</div>
+        <div class="step-desc">Vai su <strong>app.netlify.com</strong>, entra nel tuo sito, clicca "Deploys" e trascina l'intera cartella con tutti i file HTML. Il portale si aggiorna in 30 secondi mantenendo lo stesso URL.</div>
+        <span class="step-code">Trascina la cartella → Deploy automatico</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div>
+        <div class="step-title">GitHub Pages — push</div>
+        <div class="step-desc">Carica i file aggiornati nel repository GitHub. Se hai GitHub Desktop, basta trascinare i file nella cartella del repo e fare commit + push. Il sito si aggiorna in 1-2 minuti.</div>
+        <span class="step-code">git add . → git commit → git push</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div>
+        <div class="step-title">Aggiungere un nuovo strumento</div>
+        <div class="step-desc">Crea il file HTML nella stessa cartella, poi aggiungi una nuova card in questo index.html copiando il pattern esistente. Ogni tool è un file HTML autonomo — nessuna dipendenza esterna.</div>
+        <span class="step-code">nuovo-tool.html → nuova card in index.html</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">
+    <strong>SMYB Spa</strong> · Operations Intelligence Suite · Campania, IT
+  </div>
+  <div class="footer-meta">COO DASHBOARD · v2.0 · 2026</div>
+</footer>
+
+</body>
+</html>
